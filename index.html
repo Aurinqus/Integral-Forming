@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Slice &amp; Sum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;1,400&display=swap">
+<style>
+/* layout: problem rail on the left, a bench of stacked panels on graph paper to the right */
+:root{
+  --paper:#EEF2F6; --panel:#FFFFFF; --ink:#152231; --ink-2:#465668; --ink-3:#77869A;
+  --grid:#DDE5EE; --rule:#CCD6E2; --accent:#1F5BD0; --accent-soft:#E3ECFC;
+  --ref:#B26A04; --ref-soft:#FBEFD9; --good:#17734A; --good-soft:#E1F2E8; --bad:#B23A2C; --bad-soft:#FBE8E5;
+  --chip:#E7EDF6; --chip-ink:#1A3561; --field:#FFFFFF; --water:#8DBBE8; --metal:#A7B1BE; --hot:#E2762F;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0D151F; --panel:#142130; --ink:#E2E9F1; --ink-2:#A6B4C4; --ink-3:#74849B;
+  --grid:#172433; --rule:#283849; --accent:#6EA4FF; --accent-soft:#1B2E4D;
+  --ref:#F2B245; --ref-soft:#3A2C12; --good:#4DC48A; --good-soft:#123323; --bad:#FF7E6E; --bad-soft:#3E1C18;
+  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D151F; --panel:#142130; --ink:#E2E9F1; --ink-2:#A6B4C4; --ink-3:#74849B;
+  --grid:#172433; --rule:#283849; --accent:#6EA4FF; --accent-soft:#1B2E4D;
+  --ref:#F2B245; --ref-soft:#3A2C12; --good:#4DC48A; --good-soft:#123323; --bad:#FF7E6E; --bad-soft:#3E1C18;
+  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; color-scheme:dark}
+*{box-sizing:border-box}
+body{background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1240px;margin:0 auto}
+header.top{padding-block:22px 18px;display:flex;align-items:center;gap:14px}
+.logo{font-family:var(--f-math);font-size:44px;line-height:1;color:var(--accent);width:52px;height:52px;display:grid;place-items:center;border:1.5px solid var(--accent);border-radius:10px;background:var(--panel)}
+h1{font-family:var(--f-display);font-weight:600;font-size:34px;letter-spacing:.01em;margin:0;line-height:1}
+header p{margin:4px 0 0;color:var(--ink-2);font-size:14px}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+aside{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px 12px;position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
+@media (max-width:900px){aside{position:static}}
+.tier{margin:0 0 12px}
+.tier:last-child{margin:0}
+.tier h4{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px 6px}
+.plist{display:grid;gap:2px}
+@media (max-width:900px){.plist{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+.pbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:14px;color:var(--ink);width:100%}
+.pbtn:hover{background:var(--chip)}
+.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pbtn[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.pbtn .k{font-family:var(--f-math);font-style:italic;width:16px;text-align:center;color:var(--ink-3);flex:none}
+.pbtn .ok{margin-left:auto;color:var(--good);font-size:13px;flex:none}
+main{display:grid;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:18px 20px;min-width:0}
+@media (max-width:520px){.card{padding:14px 14px}}
+.phead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.tags{display:flex;gap:6px;margin-bottom:6px}
+.tag{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--chip-ink)}
+.tag.int{background:var(--accent-soft);color:var(--accent)}
+.tag.der{background:var(--ref-soft);color:var(--ref)}
+h2{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1.1;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.ptext{max-width:68ch;margin:10px 0 16px;font-size:16px}
+.mv{font-family:var(--f-math);font-style:italic;font-size:1.08em}
+.mn{font-family:var(--f-math);font-size:1.08em}
+sub{font-size:.72em}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+table.kv{border-collapse:collapse;width:100%;font-size:14px}
+table.kv td{padding:5px 8px 5px 0;border-top:1px solid var(--rule);vertical-align:top}
+table.kv tr:first-child td{border-top:0}
+table.kv td.s{width:56px;white-space:nowrap}
+table.kv td.v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13px}
+table.kv td.d{color:var(--ink-2)}
+ul.phys{margin:0 0 14px;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
+ul.phys li{padding-left:14px;position:relative}
+ul.phys li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink-3)}
+button{font:inherit}
+.btn{cursor:pointer;border:1px solid var(--rule);background:var(--panel);color:var(--ink);padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500}
+.btn:hover{border-color:var(--ink-3)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.link{border:0;padding:4px 0;background:none;color:var(--accent);font-weight:500}
+.palette{display:grid;gap:10px;margin-bottom:6px}
+.pgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pgroup .gl{font-size:12px;color:var(--ink-3);width:92px;flex:none}
+@media (max-width:520px){.pgroup .gl{width:100%}}
+.chip{cursor:grab;border:1px solid transparent;background:var(--chip);color:var(--chip-ink);border-radius:7px;padding:4px 10px;min-width:36px;font-size:15px;line-height:1.3;user-select:none}
+.chip:hover{border-color:var(--accent)}
+.chip:active{cursor:grabbing}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chip.var{background:var(--accent-soft);color:var(--accent)}
+.chip.fn{font-family:var(--f-math)}
+.help{font-size:13px;color:var(--ink-2);margin:8px 0 16px;max-width:75ch}
+.help code{font-family:var(--f-mono);font-size:12.5px;background:var(--chip);padding:1px 5px;border-radius:4px}
+.eqrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px;border:1px dashed var(--rule);border-radius:10px;background:var(--paper)}
+.lhs{font-family:var(--f-math);font-size:22px;white-space:nowrap}
+.intsign{font-family:var(--f-math);font-size:52px;line-height:.9;margin:0 -2px 0 2px}
+.lims{display:flex;flex-direction:column;gap:6px}
+input.fx,input.lim,input.var{font-family:var(--f-mono);font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:7px;padding:7px 9px;min-width:0}
+input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+input.lim{width:110px;font-size:13.5px;padding:5px 8px}
+input.var{width:52px;text-align:center}
+input.fx.grow{flex:1 1 260px}
+input.fx.pre{width:150px}
+.dee{font-family:var(--f-math);font-size:22px;font-style:italic}
+.plus{font-family:var(--f-math);font-size:22px}
+.preview{margin-top:12px;min-height:48px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-math);font-size:21px;overflow-x:auto}
+.preview .pl{font-family:var(--f-body);font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+.slot{display:inline-block;min-width:18px;height:22px;border:1.5px dashed var(--ink-3);border-radius:4px;vertical-align:middle}
+.slot.bad{border-color:var(--bad)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.92em}
+.frac>span:first-child{padding:0 3px 1px}
+.frac>span:last-child{border-top:1.2px solid currentColor;padding:1px 3px 0}
+.sq{border-top:1.2px solid currentColor;padding-left:1px}
+.ilim{display:inline-flex;flex-direction:column;vertical-align:middle;font-size:.6em;line-height:1.15;margin-right:3px}
+.isig{font-size:1.5em;vertical-align:middle}
+.perr{font-size:13.5px;color:var(--bad);margin-top:6px;display:grid;gap:2px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.vgrid figure{margin:0;min-width:0}
+.vgrid figure.wide{grid-column:1/-1}
+canvas{display:block;width:100%;height:260px;border:1px solid var(--rule);border-radius:9px;background:var(--panel)}
+figcaption{font-size:13px;color:var(--ink-2);margin-top:6px;min-height:2.6em}
+.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px;margin-top:12px}
+.sl{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
+.sl input{flex:1;accent-color:var(--accent);min-width:0}
+.sl output{font-family:var(--f-mono);font-size:13px;min-width:28px;text-align:right;color:var(--ink)}
+.readout{margin-top:10px;font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.readout b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fb{margin-top:14px;padding:12px 14px;border-radius:9px;font-size:15px;display:grid;gap:8px}
+.fb.good{background:var(--good-soft);color:var(--good)}
+.fb.bad{background:var(--bad-soft);color:var(--bad)}
+.fb.info{background:var(--chip);color:var(--chip-ink)}
+.fb .row{display:flex;gap:8px;flex-wrap:wrap}
+.fb p{margin:0;color:var(--ink)}
+.hints{margin-top:14px;display:grid;gap:10px}
+.hint{border-left:3px solid var(--ref);background:var(--ref-soft);padding:10px 14px;border-radius:0;font-size:14.5px}
+.hint .hl{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ref);margin-bottom:2px}
+.hint p{margin:0}
+.sol{border:1px solid var(--rule);border-radius:9px;padding:12px 14px;display:grid;gap:10px}
+.sol .preview{margin:0}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="logo" aria-hidden="true">∫</div>
+    <div><h1>Slice &amp; Sum</h1><p>Build integrals and derivatives straight from the physics, and see what you built.</p></div>
+  </header>
+  <div class="layout">
+    <aside id="list" aria-label="Problems"></aside>
+    <main>
+      <section class="card" id="prob">
+        <div class="phead">
+          <div><div class="tags"><span class="tag" id="p-tier"></span><span class="tag" id="p-kind"></span></div><h2 id="p-title"></h2></div>
+          <button class="btn" id="b-new" type="button">New numbers</button>
+        </div>
+        <p class="ptext" id="p-text"></p>
+        <div class="cols">
+          <div><h3>Given</h3><table class="kv" id="p-given"></table></div>
+          <div><h3>Physics you can use</h3><ul class="phys" id="p-phys"></ul><h3 id="p-vars-h">Coordinates</h3><table class="kv" id="p-vars"></table></div>
+        </div>
+      </section>
+
+      <section class="card" id="build">
+        <h3>Blocks</h3>
+        <div class="palette" id="palette"></div>
+        <p class="help" id="help"></p>
+        <div class="eqrow" id="eq"></div>
+        <button class="btn link" id="b-pre" type="button">+ Add a term outside the integral</button>
+        <div class="preview" id="preview"></div>
+        <div class="perr" id="perr"></div>
+      </section>
+
+      <section class="card" id="viz">
+        <div class="vgrid">
+          <figure id="fig-s"><canvas id="cv-s" aria-label="Physical picture of the problem"></canvas><figcaption id="cap-s"></figcaption></figure>
+          <figure id="fig-a"><canvas id="cv-a" aria-label="Graph"></canvas><figcaption id="cap-a"></figcaption></figure>
+          <figure id="fig-b" class="wide"><canvas id="cv-b" aria-label="Graph of your expression"></canvas><figcaption id="cap-b"></figcaption></figure>
+        </div>
+        <div class="sliders">
+          <label class="sl"><span id="sl-p-l">Move the slice</span><input type="range" id="sl-p" min="0" max="1000" step="1" value="500"></label>
+          <label class="sl" id="sl-n-w"><span>Strips</span><input type="range" id="sl-n" min="1" max="60" step="1" value="12"><output id="sl-n-o">12</output></label>
+        </div>
+        <div class="readout" id="readout"></div>
+      </section>
+
+      <section class="card" id="act">
+        <div class="actions">
+          <button class="btn primary" id="b-check" type="button">Check</button>
+          <button class="btn" id="b-hint" type="button">Get a hint (1 of 3)</button>
+          <button class="btn" id="b-sol" type="button" hidden>Show a solution</button>
+        </div>
+        <div id="fb"></div>
+        <div class="hints" id="hints"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script id="core">
+/* ---------- units ---------- */
+const U={none:[0,0,0],m:[1,0,0],kg:[0,1,0],s:[0,0,1],J:[2,1,-2],N:[1,1,-2],W:[2,1,-3],mps:[1,0,-1],mps2:[1,0,-2],mps3:[1,0,-3],
+  kgpm:[-1,1,0],rho:[-3,1,0],Pa:[-1,1,-2],m3ps:[3,0,-1],kgps:[0,1,-1],Npm:[0,1,-2],Npm3:[-2,1,-2],G:[3,-1,-2],ps:[0,0,-1],kgm2:[2,1,0]};
+const UN=[[U.none,'no units'],[U.m,'m'],[U.kg,'kg'],[U.s,'s'],[U.J,'J'],[U.N,'N'],[U.W,'W'],[U.mps,'m/s'],[U.mps2,'m/s²'],[U.mps3,'m/s³'],
+  [U.kgpm,'kg/m'],[U.rho,'kg/m³'],[U.Pa,'Pa'],[U.m3ps,'m³/s'],[U.kgps,'kg/s'],[U.Npm,'N/m'],[U.Npm3,'N/m³'],[U.G,'N·m²/kg²'],[U.ps,'rad/s'],[U.kgm2,'kg·m²'],
+  [[2,0,0],'m²'],[[3,0,0],'m³'],[[0,0,-2],'1/s²'],[[-1,0,0],'1/m'],[[2,1,-1],'J·s'],[[1,1,-1],'kg·m/s'],[[-2,1,0],'kg/m²'],[[1,1,0],'kg·m'],[[3,1,-2],'J·m'],[[1,0,1],'m·s'],[[2,0,-1],'m²/s'],[[2,0,-2],'m²/s²'],[[0,1,-2],'N/m']];
+const eqd=(a,b)=>a.every((v,i)=>Math.abs(v-b[i])<1e-9);
+const addd=(a,b)=>a.map((v,i)=>v+b[i]), subd=(a,b)=>a.map((v,i)=>v-b[i]), zerod=a=>a.every(v=>Math.abs(v)<1e-9);
+const SUP='⁻⁰¹²³⁴⁵⁶⁷⁸⁹';
+function supS(n){return String(n).replace(/[-0-9]/g,ch=>SUP['-0123456789'.indexOf(ch)]);}
+function uName(d){for(const [k,n] of UN) if(eqd(k,d)) return n;
+  const nm=['m','kg','s'],parts=[];d.forEach((p,i)=>{if(Math.abs(p)>1e-9){const r=Math.round(p*100)/100;parts.push(nm[i]+(r===1?'':(Number.isInteger(r)?supS(r):'^'+r)));}});return parts.join('·')||'no units';}
+
+/* ---------- numbers ---------- */
+function trimZ(s){return (s.includes('.')&&!s.includes('e'))?s.replace(/\.?0+$/,''):s;}
+function fmt(x,sig=4){if(x==null||!isFinite(x))return '—';if(x===0)return '0';const a=Math.abs(x);
+  if(a>=1e-3&&a<1e4){const s=x.toPrecision(sig);if(!s.includes('e'))return trimZ(s);}
+  if(a>=1e4&&a<1e6)return Math.round(x).toLocaleString('en-US');
+  let e=Math.floor(Math.log10(a)),ms=trimZ((x/Math.pow(10,e)).toPrecision(sig));
+  if(Math.abs(parseFloat(ms))>=10){e++;ms=trimZ((x/Math.pow(10,e)).toPrecision(sig));}
+  return ms+'×10'+supS(e);}
+function fmtLit(v){return (Number.isInteger(v)&&Math.abs(v)<1e6)?String(v):fmt(v,6);}
+
+/* ---------- expression parser ---------- */
+const FUNCS={sin:Math.sin,cos:Math.cos,tan:Math.tan,exp:Math.exp,ln:Math.log,log:Math.log,sqrt:Math.sqrt,atan:Math.atan,asin:Math.asin,acos:Math.acos,abs:Math.abs};
+const ALIAS={pi:'π',rho:'ρ',lambda:'λ',beta:'β',alpha:'α',omega:'ω',theta:'θ',sigma:'σ',mu:'μ'};
+function PErr(msg){const e=new Error(msg);e.user=true;return e;}
+function tokenize(s){
+  s=s.replace(/[−–—]/g,'-').replace(/[×·⋅∙*]/g,'*').replace(/÷/g,'/').replace(/²/g,'^2').replace(/³/g,'^3');
+  const out=[];let i=0;
+  while(i<s.length){const c=s[i];
+    if(/\s/.test(c)){i++;continue;}
+    if(/[0-9.]/.test(c)){let j=i;while(j<s.length&&/[0-9.]/.test(s[j]))j++;
+      if(s[j]==='e'||s[j]==='E'){let k=j+1;if(s[k]==='+'||s[k]==='-')k++;if(/[0-9]/.test(s[k]||'')){j=k;while(j<s.length&&/[0-9]/.test(s[j]))j++;}}
+      const str=s.slice(i,j),v=Number(str);if(!isFinite(v)||str==='.')throw PErr(`“${str}” isn’t a number I can read.`);
+      out.push({t:'num',v});i=j;continue;}
+    if(/[\p{L}_]/u.test(c)){let j=i+1;while(j<s.length&&/[\p{L}\p{N}_]/u.test(s[j])&&s[j]!=='π')j++;if(c==='π')j=i+1;out.push({t:'id',v:s.slice(i,j)});i=j;continue;}
+    if('+-*/^(),'.includes(c)){out.push({t:'op',v:c});i++;continue;}
+    if(c==='√'){out.push({t:'sqrt'});i++;continue;}
+    if(c==='∫'){out.push({t:'id',v:'int'});i++;continue;}
+    throw PErr(`“${c}” isn’t something I can use here.`);}
+  return out;}
+function splitId(id,K){
+  if(K.has(id)||FUNCS[id]||id==='int')return [id];
+  const am=id.match(/^(pi|rho|lambda|beta|alpha|omega|theta|sigma|mu)(\d*)$/);
+  if(am&&K.has(ALIAS[am[1]]+am[2]))return [ALIAS[am[1]]+am[2]];
+  const res=[];let i=0;
+  while(i<id.length){let found=null;
+    for(let j=id.length;j>i;j--){const sub=id.slice(i,j);
+      if(K.has(sub)||FUNCS[sub]){found=[sub,j];break;}
+      if(ALIAS[sub]&&K.has(ALIAS[sub])){found=[ALIAS[sub],j];break;}}
+    if(!found){if(/[0-9]/.test(id[i])){let j=i;while(j<id.length&&/[0-9]/.test(id[j]))j++;res.push({num:+id.slice(i,j)});i=j;continue;}
+      throw PErr(`I don’t know the symbol “${id.slice(i)}”. Use the blocks, or separate symbols with spaces.`);}
+    res.push(found[0]);i=found[1];}
+  return res;}
+function parse(src,K){
+  const raw=tokenize(src),T=[];
+  for(const tk of raw){if(tk.t==='id'){for(const it of splitId(tk.v,K))T.push(typeof it==='string'?{t:'id',v:it}:{t:'num',v:it.num});}else T.push(tk);}
+  if(!T.length)return null;
+  let p=0;const peek=()=>T[p],next=()=>T[p++];
+  const isOp=v=>peek()&&peek().t==='op'&&peek().v===v;
+  const need=(v,msg)=>{if(!isOp(v))throw PErr(msg);next();};
+  const startsPrimary=()=>{const k=peek();return !!k&&(k.t==='num'||k.t==='id'||k.t==='sqrt'||(k.t==='op'&&k.v==='('));};
+  function expr(){let a=term();while(isOp('+')||isOp('-')){const o=next().v;a={t:'bin',op:o,a,b:term()};}return a;}
+  function term(){let a=unary();for(;;){if(isOp('*')||isOp('/')){const o=next().v;a={t:'bin',op:o,a,b:unary()};}else if(startsPrimary()){a={t:'bin',op:'*',a,b:power(),imp:true};}else break;}return a;}
+  function unary(){if(isOp('-')){next();return {t:'neg',a:unary()};}if(isOp('+')){next();return unary();}return power();}
+  function power(){const b=primary();if(isOp('^')){next();return {t:'bin',op:'^',a:b,b:unary()};}return b;}
+  function primary(){const k=next();
+    if(!k)throw PErr('The expression stops too early: something is missing at the end.');
+    if(k.t==='num')return {t:'num',v:k.v};
+    if(k.t==='sqrt')return {t:'fn',n:'sqrt',a:primary()};
+    if(k.t==='op'&&k.v==='('){const e=expr();need(')','A “(” is never closed.');return e;}
+    if(k.t==='id'){
+      if(k.v==='int'){need('(','Write a nested integral as ∫(integrand, variable, from, to).');const f=expr();need(',','Nested integral: put a comma after the integrand, then the variable.');
+        const vk=next();if(!vk||vk.t!=='id'||!K.has(vk.v))throw PErr('Nested integral: the second part must be a coordinate, like s.');
+        need(',','Nested integral: put a comma after the variable, then the lower limit.');const lo=expr();need(',','Nested integral: put a comma after the lower limit, then the upper limit.');const hi=expr();
+        need(')','Nested integral: close it with “)”.');return {t:'int',f,v:vk.v,lo,hi};}
+      if(FUNCS[k.v]){need('(',`${k.v} needs brackets, like ${k.v}(x).`);const a=expr();need(')',`The bracket after ${k.v} is never closed.`);return {t:'fn',n:k.v,a};}
+      return {t:'sym',n:k.v};}
+    if(k.t==='op'&&k.v===')')throw PErr('There’s a “)” with nothing to close.');
+    if(k.t==='op'&&k.v===',')throw PErr('Commas only belong inside a nested ∫( , , , ).');
+    throw PErr(`“${k.v}” needs something on its left.`);}
+  const ast=expr();
+  if(p<T.length){const k=T[p];throw PErr(k.v===')'?'There’s an extra “)”.':`I can’t place “${k.v}” here.`);}
+  return ast;}
+function simpson(f,a,b,n){if(a===b)return 0;if(n%2)n++;const h=(b-a)/n;let s=f(a)+f(b);for(let i=1;i<n;i++)s+=(i%2?4:2)*f(a+i*h);return s*h/3;}
+function ev(n,env){switch(n.t){
+  case 'num':return n.v;
+  case 'sym':{const v=env[n.n];if(v===undefined)throw PErr(`“${n.n}” has no value here.`);return v;}
+  case 'neg':return -ev(n.a,env);
+  case 'bin':{const a=ev(n.a,env),b=ev(n.b,env);switch(n.op){case '+':return a+b;case '-':return a-b;case '*':return a*b;case '/':return a/b;default:return Math.pow(a,b);}}
+  case 'fn':return FUNCS[n.n](ev(n.a,env));
+  case 'int':{const lo=ev(n.lo,env),hi=ev(n.hi,env);return simpson(x=>{const e=Object.create(env);e[n.v]=x;return ev(n.f,e);},lo,hi,48);}}}
+function hasSym(n,names){if(!n)return false;switch(n.t){case 'sym':return names.includes(n.n);case 'num':return false;case 'neg':return hasSym(n.a,names);case 'bin':return hasSym(n.a,names)||hasSym(n.b,names);case 'fn':return hasSym(n.a,names);case 'int':return hasSym(n.lo,names)||hasSym(n.hi,names)||(!names.includes(n.v)&&hasSym(n.f,names))||(hasSym(n.f,names.filter(x=>x!==n.v)));}return false;}
+function DErr(msg){const e=new Error(msg);e.user=true;e.dim=true;return e;}
+function dimOf(n,D){switch(n.t){
+  case 'num':return {d:[0,0,0],c:n.v};
+  case 'sym':return {d:D[n.n]||[0,0,0],c:n.n==='π'?Math.PI:null};
+  case 'neg':{const r=dimOf(n.a,D);return {d:r.d,c:r.c==null?null:-r.c};}
+  case 'bin':{const A=dimOf(n.a,D),B=dimOf(n.b,D),both=A.c!=null&&B.c!=null;
+    if(n.op==='+'||n.op==='-'){
+      if(A.c===0)return B; if(B.c===0)return A;
+      if(!eqd(A.d,B.d))throw DErr(`you’re ${n.op==='+'?'adding':'subtracting'} ${uName(B.d)} ${n.op==='+'?'to':'from'} ${uName(A.d)}, which can’t be combined`);
+      return {d:A.d,c:both?(n.op==='+'?A.c+B.c:A.c-B.c):null};}
+    if(n.op==='*')return {d:addd(A.d,B.d),c:both?A.c*B.c:null};
+    if(n.op==='/')return {d:subd(A.d,B.d),c:both?A.c/B.c:null};
+    if(!zerod(B.d))throw DErr('an exponent has units, but exponents must be plain numbers');
+    if(zerod(A.d))return {d:[0,0,0],c:both?Math.pow(A.c,B.c):null};
+    if(B.c==null)throw DErr('a quantity with units is raised to a power that isn’t a fixed number');
+    return {d:A.d.map(x=>x*B.c),c:null};}
+  case 'fn':{const A=dimOf(n.a,D);
+    if(n.n==='sqrt')return {d:A.d.map(x=>x/2),c:A.c!=null?Math.sqrt(A.c):null};
+    if(n.n==='abs')return A;
+    if(!zerod(A.d))throw DErr(`${n.n}( ) has ${uName(A.d)} inside it, but it needs a plain number`);
+    return {d:[0,0,0],c:null};}
+  case 'int':{const F=dimOf(n.f,D);return {d:addd(F.d,D[n.v]||[0,0,0]),c:null};}}}
+
+/* ---------- display ---------- */
+function symHTML(n){if(n==='π')return '<span class="mn">π</span>';const m=n.match(/^(.+?)(\d+|max)$/);
+  if(m)return `<i class="mv">${m[1]}</i><sub>${m[2]}</sub>`;return `<i class="mv">${n}</i>`;}
+const S=symHTML;
+function pp(n,parent=0){let s,pr;
+  switch(n.t){
+    case 'num':s=fmtLit(n.v);pr=5;break;
+    case 'sym':s=symHTML(n.n);pr=5;break;
+    case 'neg':s='−'+pp(n.a,3);pr=3;break;
+    case 'bin':
+      if(n.op==='+'||n.op==='-'){s=pp(n.a,1)+(n.op==='+'?' + ':' − ')+pp(n.b,1.5);pr=1;}
+      else if(n.op==='*'){const sep=(n.a.t==='num'&&(n.b.t==='num'||(n.b.t==='bin'&&n.b.op==='^'&&n.b.a.t==='num')))?'·':' ';s=pp(n.a,2)+sep+pp(n.b,2.5);pr=2;}
+      else if(n.op==='/'){s=`<span class="frac"><span>${pp(n.a,0)}</span><span>${pp(n.b,0)}</span></span>`;pr=4.2;}
+      else{s=pp(n.a,4.5)+'<sup>'+pp(n.b,0)+'</sup>';pr=4;}
+      break;
+    case 'fn':s=n.n==='sqrt'?`√<span class="sq">${pp(n.a,0)}</span>`:`${n.n}(${pp(n.a,0)})`;pr=5;break;
+    case 'int':s=`<span class="isig">∫</span><span class="ilim"><span>${pp(n.hi,0)}</span><span>${pp(n.lo,0)}</span></span>${pp(n.f,1.5)} <i class="mv">d</i>${symHTML(n.v)}`;pr=1.2;break;}
+  return pr<parent?`(${s})`:s;}
+
+/* ---------- random ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function mkR(seed){const rnd=mulberry(seed);return (a,b,st)=>{const k=Math.round((b-a)/st),v=a+st*Math.floor(rnd()*(k+1)),d=Math.max(0,-Math.floor(Math.log10(st)+1e-9));return +v.toFixed(d+1);};}
+
+/* ---------- problems ---------- */
+const g0=9.81;
+const TPL=[
+{id:'rod',tier:'Basics',kind:'int',title:'Tapered rod',scene:'rod',
+ params:r=>{const l0=r(2,5,0.5);return {L:r(1,3,0.5),'λ0':l0,'λ1':+(l0+r(2,6,0.5)).toFixed(2)};},
+ sym:[['L',U.m,'length of the rod'],['λ0',U.kgpm,'mass per metre at the thin end'],['λ1',U.kgpm,'mass per metre at the thick end'],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['x',U.m,'distance from the thin end'],['t',U.s,'time']],
+ text:`A steel rod of length ${S('L')} gets thicker toward one end. Its mass per metre is ${S('λ0')} at the thin end and rises evenly to ${S('λ1')} at the thick end. What is the rod’s total mass ${S('M')}?`,
+ phys:[`Mass of a short piece: <i class="mv">dm</i> = ${S('λ')}·<i class="mv">dx</i>, where ${S('λ')} is the mass per metre at that spot`,`A quantity that changes evenly along a length is a straight line: start value + slope × distance`],
+ ans:{lhs:S('M'),u:U.kg,f:P=>P.L*(P['λ0']+P['λ1'])/2},
+ sol:{f:'λ0 + (λ1 - λ0) x / L',v:'x',lo:'0',hi:'L'},
+ hint:`Cut the rod into short pieces of length <i class="mv">dx</i>. A piece at position ${S('x')} has mass ${S('λ')}(${S('x')})·<i class="mv">dx</i>. Write ${S('λ')}(${S('x')}) as a straight line that equals ${S('λ0')} at ${S('x')} = 0 and ${S('λ1')} at ${S('x')} = ${S('L')}, then add the pieces from one end to the other.`},
+
+{id:'lift',tier:'Basics',kind:'int',title:'Express elevator',scene:'lift',
+ params:r=>({vmax:r(2,6,0.5),T:r(8,20,1)}),
+ sym:[['vmax',U.mps,'top speed'],['T',U.s,'length of the ride'],['m',U.kg,'mass of the loaded cabin',1200],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['t',U.s,'time since the doors closed'],['h',U.m,'height of the cabin']],
+ text:`An express elevator starts and stops at rest. During the ride its speed is ${S('v')}(${S('t')}) = ${S('vmax')}·sin(π${S('t')}/${S('T')}), where ${S('T')} is the length of the ride. How high does it climb?`,
+ phys:[`Velocity is how fast position changes: ${S('v')} = <i class="mv">dh</i>/<i class="mv">dt</i>`,`Height gained in a short time: <i class="mv">dh</i> = ${S('v')}·<i class="mv">dt</i>`],
+ ans:{lhs:'<span class="mn">Δ</span>'+S('h'),u:U.m,f:P=>2*P.vmax*P.T/Math.PI},
+ sol:{f:'vmax sin(π t / T)',v:'t',lo:'0',hi:'T'},
+ hint:`In a short time <i class="mv">dt</i> the cabin rises ${S('v')}·<i class="mv">dt</i>. Add these up from the start of the ride (${S('t')} = 0) to the end (${S('t')} = ${S('T')}).`},
+
+{id:'ball',tier:'Basics',kind:'der',title:'Tossed ball',scene:'ball',
+ params:r=>({h0:r(1,2,0.1),v0:r(8,20,1)}),
+ sym:[['h0',U.m,'launch height'],['v0',U.mps,'launch speed'],['g',U.mps2,'gravitational acceleration',g0],['m',U.kg,'mass of the ball',0.15]],
+ vars:[['t',U.s,'time since the throw']],v:'t',dom:P=>[0,2*P.v0/g0],
+ text:`A ball is thrown straight up from height ${S('h0')} with speed ${S('v0')}. Its height is ${S('y')}(${S('t')}) = ${S('h0')} + ${S('v0')}${S('t')} − ½${S('g')}${S('t')}². Build its velocity ${S('v')}(${S('t')}).`,
+ phys:[`Velocity: ${S('v')} = <i class="mv">dy</i>/<i class="mv">dt</i>`,`Power rule: <i class="mv">d</i>/<i class="mv">dt</i> (${S('t')}<sup>${S('n')}</sup>) = ${S('n')}·${S('t')}<sup>${S('n')}−1</sup>`,`The derivative of a constant is 0`],
+ ans:{lhs:`${S('v')}(${S('t')})`,u:U.mps},
+ sol:{f:'v0 - g t'},given:{lhs:`${S('y')}(${S('t')})`,f:'h0 + v0 t - g t^2/2',u:U.m,sign:1},
+ hint:`Differentiate ${S('y')}(${S('t')}) one term at a time. ${S('h0')} doesn’t change with time, ${S('v0')}${S('t')} changes at a steady rate, and ½${S('g')}${S('t')}² follows the power rule.`},
+
+{id:'brake',tier:'Practical',kind:'int',title:'Hot brakes',scene:'road',
+ params:r=>({v0:r(20,35,1),k:r(0.5,2,0.1)}),
+ sym:[['v0',U.mps,'speed when braking starts'],['k',U.mps3,'how fast the deceleration grows'],['m',U.kg,'mass of the car',1400],['μ',U.none,'tyre friction coefficient',0.8]],
+ vars:[['t',U.s,'time since braking began'],['s',U.s,'a second time variable, for an integral inside an integral'],['x',U.m,'distance along the road']],
+ text:`A car moving at ${S('v0')} brakes hard. As the brake pads heat up, the deceleration grows with time: ${S('a')}(${S('t')}) = −${S('k')}${S('t')}. How far does the car travel before it stops? You’ll need to work out when it stops.`,
+ phys:[`Acceleration: ${S('a')} = <i class="mv">dv</i>/<i class="mv">dt</i>, so ${S('v')}(${S('t')}) = ${S('v0')} + <span class="mn">∫</span>${S('a')} <i class="mv">ds</i> from 0 to ${S('t')}`,`Distance in a short time: <i class="mv">dx</i> = ${S('v')}·<i class="mv">dt</i>`,`The car stops when ${S('v')} = 0`],
+ ans:{lhs:S('d'),u:U.m,f:P=>{const T=Math.sqrt(2*P.v0/P.k);return 2/3*P.v0*T;}},
+ sol:{f:'v0 - k t^2/2',v:'t',lo:'0',hi:'√(2 v0/k)'},
+ hint:`First find ${S('v')}(${S('t')}): integrate ${S('a')} from 0 to ${S('t')} and add ${S('v0')}. The car stops when ${S('v')}(${S('t')}) = 0; solve that for ${S('t')} to get your upper limit. Then add up ${S('v')}·<i class="mv">dt</i>.`},
+
+{id:'pump',tier:'Practical',kind:'int',title:'Emptying a water tank',scene:'tank',
+ params:r=>({R:r(0.5,2,0.1),H:r(2,6,0.5),a:r(0.5,2,0.5)}),
+ sym:[['R',U.m,'radius of the tank'],['H',U.m,'height of the tank'],['a',U.m,'height of the outlet above the rim'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0],['P',U.W,'power of the pump',2000]],
+ vars:[['y',U.m,'height above the tank bottom'],['x',U.m,'horizontal distance from the tank’s centre line']],
+ text:`A vertical cylindrical tank with radius ${S('R')} and height ${S('H')} is full of water. A pump lifts the water out through an outlet pipe that ends a height ${S('a')} above the top rim. How much work does the pump do to empty the tank?`,
+ phys:[`Work to lift something: ${S('W')} = ${S('F')}·${S('d')}`,`Weight: ${S('F')} = ${S('m')}${S('g')}`,`Mass from density: ${S('m')} = ${S('ρ')}${S('V')}`,`Volume of a thin disc: ${S('V')} = π${S('r')}² × thickness`],
+ ans:{lhs:S('W'),u:U.J,f:P=>P['ρ']*P.g*Math.PI*P.R*P.R*(P.H*P.H/2+P.a*P.H)},
+ sol:{f:'ρ g π R^2 (H + a - y)',v:'y',lo:'0',hi:'H'},
+ hint:`Slice the water into thin discs of thickness <i class="mv">dy</i>. A disc at height ${S('y')} has volume π${S('R')}²·<i class="mv">dy</i>, weight ${S('ρ')}${S('g')} times that, and must be lifted from ${S('y')} up to the outlet at ${S('H')} + ${S('a')}.`},
+
+{id:'dam',tier:'Practical',kind:'int',title:'Sluice gate',scene:'dam',
+ params:r=>{const D=r(8,30,1);return {w:r(2,8,0.5),D,b:Math.max(1,Math.round(r(0.2,0.6,0.1)*D*2)/2)};},
+ sym:[['w',U.m,'width of the gate'],['b',U.m,'height of the gate, measured up from the floor'],['D',U.m,'depth of the water'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0],['p0',U.Pa,'air pressure (it pushes on both sides of the gate)',101325]],
+ vars:[['y',U.m,'height above the reservoir floor'],['h',U.m,'depth below the water surface']],
+ text:`A dam holds back a reservoir of depth ${S('D')}. At the foot of the dam is a rectangular sluice gate, ${S('w')} wide and ${S('b')} tall, starting at the reservoir floor. Water pressure grows with depth. Find the total force the water puts on the gate.`,
+ phys:[`Pressure at depth ${S('h')}: ${S('p')} = ${S('ρ')}${S('g')}${S('h')}`,`Force from pressure on a flat area: ${S('F')} = ${S('p')}${S('A')}`,`Area of a thin horizontal strip: ${S('A')} = width × height of the strip`],
+ ans:{lhs:S('F'),u:U.N,f:P=>P['ρ']*P.g*P.w*(P.D*P.b-P.b*P.b/2)},
+ sol:{f:'ρ g (D - y) w',v:'y',lo:'0',hi:'b'},
+ hint:`Cut the gate into horizontal strips of height <i class="mv">dy</i>. A strip at height ${S('y')} sits at depth ${S('D')} − ${S('y')}, so it feels pressure ${S('ρ')}${S('g')}(${S('D')} − ${S('y')}) over an area ${S('w')}·<i class="mv">dy</i>. The gate runs from the floor up to ${S('b')}. Air pressure cancels out because it acts on both sides.`},
+
+{id:'cone',tier:'Practical',kind:'der',title:'Filling a cone tank',scene:'cone',
+ params:r=>({R:r(1,3,0.5),H:r(2,5,0.5),Q:r(0.05,0.3,0.01)}),
+ sym:[['R',U.m,'radius at the top'],['H',U.m,'height of the tank'],['Q',U.m3ps,'inflow rate'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['h',U.m,'depth of the water']],v:'h',dom:P=>[0.15*P.H,P.H],
+ text:`A cone-shaped tank stands point-down. It has top radius ${S('R')} and height ${S('H')}. Water flows in at a steady rate ${S('Q')}. Build <i class="mv">dh</i>/<i class="mv">dt</i>, how fast the water level rises, as a function of the water depth ${S('h')}.`,
+ phys:[`Volume of a cone: ${S('V')} = ⅓π${S('r')}²${S('h')}`,`Similar triangles: at any depth, ${S('r')}/${S('h')} = ${S('R')}/${S('H')}`,`Chain rule: <i class="mv">dV</i>/<i class="mv">dt</i> = (<i class="mv">dV</i>/<i class="mv">dh</i>)·(<i class="mv">dh</i>/<i class="mv">dt</i>)`,`The inflow sets <i class="mv">dV</i>/<i class="mv">dt</i> = ${S('Q')}`],
+ ans:{lhs:'<i class="mv">dh</i>/<i class="mv">dt</i>',u:U.mps},
+ sol:{f:'Q H^2 / (π R^2 h^2)'},
+ hint:`Use ${S('r')} = ${S('R')}${S('h')}/${S('H')} to write the water volume with ${S('h')} only. Differentiate both sides with respect to time using the chain rule, set <i class="mv">dV</i>/<i class="mv">dt</i> = ${S('Q')}, and solve for <i class="mv">dh</i>/<i class="mv">dt</i>.`},
+
+{id:'spring',tier:'Physics',kind:'int',title:'Stiffening spring',scene:'spring',
+ params:r=>({k:r(50,200,10),'β':r(500,3000,100),X:r(0.1,0.4,0.05)}),
+ sym:[['k',U.Npm,'linear stiffness'],['β',U.Npm3,'how much it stiffens'],['X',U.m,'final extension'],['m',U.kg,'mass hanging on it',2],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['x',U.m,'extension from rest length'],['t',U.s,'time']],
+ text:`A heavy-duty spring stiffens as it stretches. The force needed to hold it at extension ${S('x')} is ${S('F')}(${S('x')}) = ${S('k')}${S('x')} + ${S('β')}${S('x')}³. How much work does it take to stretch it from its rest length to an extension ${S('X')}?`,
+ phys:[`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·<i class="mv">dx</i>`,`${S('W')} = ${S('F')}·${S('d')} only works when the force stays constant`],
+ ans:{lhs:S('W'),u:U.J,f:P=>P.k*P.X*P.X/2+P['β']*P.X**4/4},
+ sol:{f:'k x + β x^3',v:'x',lo:'0',hi:'X'},
+ hint:`The force changes as the spring stretches, so split the stretch into short steps <i class="mv">dx</i>. Each step costs ${S('F')}(${S('x')})·<i class="mv">dx</i> of work. Add them from ${S('x')} = 0 to ${S('x')} = ${S('X')}.`},
+
+{id:'orbit',tier:'Physics',kind:'int',title:'Lifting to orbit',scene:'earth',
+ params:r=>({m:r(500,3000,100),h:r(200,2000,100)*1000}),
+ sym:[['G',U.G,'gravitational constant',6.674e-11],['M',U.kg,'mass of Earth',5.972e24],['m',U.kg,'mass of the satellite'],['R',U.m,'radius of Earth',6.371e6],['h',U.m,'altitude to reach'],['g',U.mps2,'gravity at the surface',g0]],
+ vars:[['r',U.m,'distance from Earth’s centre'],['y',U.m,'altitude above the surface']],
+ text:`Far from the ground, gravity is weaker than ${S('m')}${S('g')}. How much work does it take to lift a satellite of mass ${S('m')} from Earth’s surface to an altitude ${S('h')}? Count only the lifting, not the speed it needs to stay in orbit.`,
+ phys:[`Newton’s gravity: ${S('F')} = ${S('G')}${S('M')}${S('m')}/${S('r')}², where ${S('r')} is the distance from Earth’s centre`,`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·<i class="mv">dr</i>`],
+ ans:{lhs:S('W'),u:U.J,f:P=>P.G*P.M*P.m*(1/P.R-1/(P.R+P.h))},
+ sol:{f:'G M m / r^2',v:'r',lo:'R',hi:'R + h'},
+ hint:`Measure position by ${S('r')}, the distance from Earth’s centre. The satellite goes from ${S('r')} = ${S('R')} to ${S('r')} = ${S('R')} + ${S('h')}, and over each step <i class="mv">dr</i> the force is ${S('G')}${S('M')}${S('m')}/${S('r')}².`},
+
+{id:'disc',tier:'Physics',kind:'int',title:'Spinning disc',scene:'disc',
+ params:r=>({M:r(1,10,0.5),R:r(0.1,0.5,0.05)}),
+ sym:[['M',U.kg,'mass of the disc'],['R',U.m,'radius of the disc'],['ω',U.ps,'spin rate',10]],
+ vars:[['r',U.m,'distance from the centre'],['θ',U.none,'angle around the disc']],
+ text:`A uniform solid disc with mass ${S('M')} and radius ${S('R')} spins about its centre. Build its moment of inertia ${S('I')} by adding up thin rings.`,
+ phys:[`A thin ring of mass <i class="mv">dm</i> at radius ${S('r')}: <i class="mv">dI</i> = ${S('r')}²·<i class="mv">dm</i>`,`Mass per area of a uniform disc: ${S('σ')} = mass ÷ area`,`Area of a circle: ${S('A')} = π${S('r')}²`,`A thin ring’s area is about its circumference × its width`],
+ ans:{lhs:S('I'),u:U.kgm2,f:P=>P.M*P.R*P.R/2},
+ sol:{f:'r^2 M/(π R^2) 2 π r',v:'r',lo:'0',hi:'R'},
+ hint:`A ring at radius ${S('r')} with width <i class="mv">dr</i> has area 2π${S('r')}·<i class="mv">dr</i>. Its mass is ${S('σ')} times that area, with ${S('σ')} = ${S('M')}/(π${S('R')}²). Multiply the ring’s mass by ${S('r')}² and add rings from the centre to the edge.`},
+
+{id:'lj',tier:'Physics',kind:'der',title:'Force between two atoms',scene:'atoms',
+ params:r=>({U0:+(r(1,3,0.1)*1e-21).toPrecision(3),a:+(r(0.3,0.4,0.01)*1e-9).toPrecision(3)}),
+ sym:[['U0',U.J,'depth of the energy well'],['a',U.m,'separation with the lowest energy'],['m',U.kg,'mass of one atom',6.63e-26]],
+ vars:[['x',U.m,'distance between the atoms']],v:'x',dom:P=>[0.92*P.a,2.2*P.a],
+ text:`Two atoms interact through the Lennard-Jones potential ${S('U')}(${S('x')}) = ${S('U0')}·((${S('a')}/${S('x')})¹² − 2(${S('a')}/${S('x')})⁶), where ${S('x')} is the distance between them. The force is ${S('F')} = −<i class="mv">dU</i>/<i class="mv">dx</i>, positive when they push apart. Build ${S('F')}(${S('x')}).`,
+ phys:[`Force from potential energy: ${S('F')} = −<i class="mv">dU</i>/<i class="mv">dx</i>`,`Power rule: <i class="mv">d</i>/<i class="mv">dx</i> (${S('x')}<sup>${S('n')}</sup>) = ${S('n')}·${S('x')}<sup>${S('n')}−1</sup>`,`(${S('a')}/${S('x')})<sup>${S('n')}</sup> = ${S('a')}<sup>${S('n')}</sup>·${S('x')}<sup>−${S('n')}</sup>`],
+ ans:{lhs:`${S('F')}(${S('x')})`,u:U.N},
+ sol:{f:'12 U0 / x ((a/x)^12 - (a/x)^6)'},given:{lhs:`${S('U')}(${S('x')})`,f:'U0 ((a/x)^12 - 2 (a/x)^6)',u:U.J,sign:-1},
+ hint:`Rewrite each (${S('a')}/${S('x')})<sup>${S('n')}</sup> as ${S('a')}<sup>${S('n')}</sup>${S('x')}<sup>−${S('n')}</sup> so the power rule applies. Differentiate both terms, then flip the sign to get ${S('F')}.`},
+
+{id:'rocket',tier:'Extreme',kind:'int',title:'Interceptor burn',scene:'rocket',
+ params:r=>{const m0=r(800,2000,100),q=r(2,8,0.5);return {u:r(2000,3500,100),m0,q,T:Math.round(r(0.4,0.7,0.05)*m0/q)};},
+ sym:[['u',U.mps,'exhaust speed'],['q',U.kgps,'fuel burned per second'],['m0',U.kg,'starting mass'],['T',U.s,'burn time'],['g',U.mps2,'gravity on Earth (not out here)',g0]],
+ vars:[['t',U.s,'time since ignition'],['s',U.s,'a second time variable, for an integral inside an integral'],['x',U.m,'distance travelled']],
+ text:`Your interceptor starts at rest in deep space, far from any gravity. Its engine burns fuel at ${S('q')} kilograms per second with exhaust speed ${S('u')}. As the craft gets lighter it accelerates harder: ${S('a')}(${S('t')}) = ${S('u')}${S('q')}/(${S('m0')} − ${S('q')}${S('t')}). How far has it travelled when the engine cuts off at ${S('t')} = ${S('T')}? That distance decides where it can meet the asteroid.`,
+ phys:[`${S('a')} = <i class="mv">dv</i>/<i class="mv">dt</i> and ${S('v')} = <i class="mv">dx</i>/<i class="mv">dt</i>`,`Starting from rest, velocity is the accumulated acceleration`,`<span class="mn">∫</span> 1/(${S('c')} − ${S('q')}${S('s')}) <i class="mv">ds</i> = −(1/${S('q')})·ln(${S('c')} − ${S('q')}${S('s')})`],
+ ans:{lhs:`${S('x')}(${S('T')})`,u:U.m,f:P=>{const m1=P.m0-P.q*P.T;return P.u*(P.T-(m1/P.q)*Math.log(P.m0/m1));}},
+ sol:{f:'u ln(m0/(m0 - q t))',v:'t',lo:'0',hi:'T'},
+ hint:`It takes two steps. Velocity is the sum of ${S('a')}(${S('s')})·<i class="mv">ds</i> from 0 to ${S('t')}. Position is the sum of ${S('v')}(${S('t')})·<i class="mv">dt</i> from 0 to ${S('T')}. Either integrate ${S('a')} by hand first, or put one ∫ inside the other with the nested ∫ block.`},
+
+{id:'track',tier:'Extreme',kind:'int',title:'Predicting the asteroid',scene:'track',
+ params:r=>({x0:r(20,80,5)*1000,v0:r(5,20,1),'α':r(0.01,0.05,0.005),'ω':Math.round(2*Math.PI/r(200,600,50)*1e5)/1e5,T:r(600,1800,100)}),
+ sym:[['x0',U.m,'distance when first tracked'],['v0',U.mps,'speed away from you when first tracked'],['α',U.mps2,'strength of the periodic push'],['ω',U.ps,'angular frequency of the push'],['T',U.s,'how far ahead to predict'],['m',U.kg,'mass of the asteroid',2e9]],
+ vars:[['t',U.s,'time since first tracked'],['s',U.s,'a second time variable, for an integral inside an integral']],
+ text:`Radar puts an asteroid at distance ${S('x0')} along your tracking line, moving away at ${S('v0')}. Sunlight heating its surface adds a small periodic push, ${S('a')}(${S('t')}) = ${S('α')}·sin(${S('ω')}${S('t')}). Predict where it will be at time ${S('T')}, so the interceptor can be aimed there.`,
+ phys:[`Position = starting position + distance covered since`,`Velocity = starting velocity + accumulated acceleration`,`<span class="mn">∫</span> sin(${S('ω')}${S('s')}) <i class="mv">ds</i> = −cos(${S('ω')}${S('s')})/${S('ω')}`],
+ ans:{lhs:`${S('x')}(${S('T')})`,u:U.m,f:P=>P.x0+P.v0*P.T+P['α']/P['ω']*(P.T-Math.sin(P['ω']*P.T)/P['ω'])},
+ sol:{pre:'x0',f:'v0 + α (1 - cos(ω t))/ω',v:'t',lo:'0',hi:'T'},
+ hint:`Start from the known position ${S('x0')} and add the distance covered. The velocity at time ${S('t')} is ${S('v0')} plus the integral of ${S('a')}(${S('s')}) from 0 to ${S('t')}. That velocity goes inside an integral from 0 to ${S('T')}, and ${S('x0')} goes in a term outside the integral.`},
+
+{id:'los',tier:'Extreme',kind:'der',title:'Line-of-sight rate',scene:'los',
+ params:r=>({D:r(5,50,1)*1000,u:r(2,15,0.5)*1000}),
+ sym:[['D',U.m,'closest distance of the path'],['u',U.mps,'speed of the asteroid'],['c',U.mps,'speed of light (radar)',2.998e8]],
+ vars:[['t',U.s,'time from closest approach']],v:'t',dom:P=>[-3*P.D/P.u,3*P.D/P.u],
+ text:`A tracking station watches an asteroid fly past on a straight path. The path comes no closer than ${S('D')}, the asteroid moves at speed ${S('u')}, and closest approach happens at ${S('t')} = 0. The line-of-sight angle is ${S('θ')}(${S('t')}) = atan(${S('u')}${S('t')}/${S('D')}). Proportional navigation steers an interceptor by how fast this angle turns. Build <i class="mv">dθ</i>/<i class="mv">dt</i>.`,
+ phys:[`Chain rule: <i class="mv">d</i>/<i class="mv">dt</i> ${S('f')}(${S('z')}(${S('t')})) = ${S('f')}′(${S('z')})·${S('z')}′(${S('t')})`,`<i class="mv">d</i>/<i class="mv">dz</i> atan(${S('z')}) = 1/(1 + ${S('z')}²)`],
+ ans:{lhs:'<i class="mv">dθ</i>/<i class="mv">dt</i>',u:U.ps},
+ sol:{f:'(u/D) / (1 + (u t/D)^2)'},given:{lhs:`${S('θ')}(${S('t')})`,f:'atan(u t / D)',u:U.none,sign:1},
+ hint:`Let ${S('z')} = ${S('u')}${S('t')}/${S('D')}. Then ${S('θ')} = atan(${S('z')}), so <i class="mv">dθ</i>/<i class="mv">dt</i> = (<i class="mv">dθ</i>/<i class="mv">dz</i>)·(<i class="mv">dz</i>/<i class="mv">dt</i>).`},
+];
+const TIERS=['Basics','Practical','Physics','Extreme'];
+
+function knownOf(t){return new Set(['π',...t.sym.map(s=>s[0]),...t.vars.map(v=>v[0])]);}
+function dimsOf(t){const d={'π':U.none};for(const s of t.sym)d[s[0]]=s[1];for(const v of t.vars)d[v[0]]=v[1];return d;}
+function mkParams(t,seed){const raw=t.params(mkR(seed)),P={'π':Math.PI};for(const s of t.sym)P[s[0]]=s[3]!==undefined?s[3]:raw[s[0]];return P;}
+function envOf(t,P){const e={'π':Math.PI};for(const s of t.sym)e[s[0]]=P[s[0]];return e;}
+function fnOf(ast,env,v){return x=>{const e=Object.create(env);e[v]=x;return ev(ast,e);};}
+</script>
+
+<script id="ui">
+const $=s=>document.querySelector(s);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+let cur=0,P=null,probe=0.5,nStrips=12,lastField=null,M=null,raf=0;
+const ST={};
+let solved=new Set();
+try{solved=new Set(JSON.parse(localStorage.getItem('slicesum.solved')||'[]'));}catch(e){}
+function saveSolved(){try{localStorage.setItem('slicesum.solved',JSON.stringify([...solved]));}catch(e){}}
+function state(){const t=TPL[cur];return ST[t.id]||(ST[t.id]={f:'',lo:'',hi:'',v:'',pre:'',showPre:false,hint:0,seed:1+Math.floor(Math.random()*1e9),fb:null,showSol:false});}
+function tp(str,K){if(!str||!str.trim())return {empty:true};try{const ast=parse(str,K);return ast?{ast}:{empty:true};}catch(e){return {err:e.user?e.message:'That can’t be read as math yet.'};}}
+
+/* ---------- colours ---------- */
+function colors(){const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k).trim();
+  return {ink:g('--ink'),ink2:g('--ink-2'),ink3:g('--ink-3'),rule:g('--rule'),grid:g('--grid'),acc:g('--accent'),ref:g('--ref'),panel:g('--panel'),
+    water:g('--water'),metal:g('--metal'),hot:g('--hot'),good:g('--good'),bad:g('--bad'),paper:g('--paper')};}
+
+/* ---------- reference model ---------- */
+const REF={};
+function refOf(t){const key=t.id+':'+JSON.stringify(P);if(REF[t.id]&&REF[t.id].key===key)return REF[t.id];
+  const K=knownOf(t),E=envOf(t,P),r={key};
+  if(t.kind==='int'){r.v=t.sol.v;r.fx=fnOf(parse(t.sol.f,K),E,t.sol.v);r.lo=ev(parse(t.sol.lo,K),E);r.hi=ev(parse(t.sol.hi,K),E);r.ans=t.ans.f(P);}
+  else{r.v=t.v;r.fx=fnOf(parse(t.sol.f,K),E,t.v);r.dom=t.dom(P);if(t.given)r.gx=fnOf(parse(t.given.f,K),E,t.v);}
+  REF[t.id]=r;return r;}
+
+/* ---------- user model ---------- */
+function buildModel(){const t=TPL[cur],st=state(),K=knownOf(t),E=envOf(t,P),D=dimsOf(t),vNames=t.vars.map(v=>v[0]);
+  const m={kind:t.kind,errs:[]};
+  m.f=tp(st.f,K);
+  if(m.f.err)m.errs.push(['Integrand',m.f.err]);
+  if(t.kind==='der'){m.f.label='Expression';if(m.f.err)m.errs[0][0]='Expression';
+    m.v=t.v;
+    if(m.f.ast){const others=vNames.filter(x=>x!==t.v);
+      m.fx=fnOf(m.f.ast,E,t.v);
+      try{m.dim=dimOf(m.f.ast,D).d;}catch(e){m.dimErr=e.message;}}
+    return m;}
+  m.lo=tp(st.lo,K);m.hi=tp(st.hi,K);m.pre=st.showPre?tp(st.pre,K):{empty:true};
+  if(m.lo.err)m.errs.push(['Lower limit',m.lo.err]);
+  if(m.hi.err)m.errs.push(['Upper limit',m.hi.err]);
+  if(m.pre.err)m.errs.push(['Outside term',m.pre.err]);
+  let v=st.v.trim();const am=v.match(/^(theta|omega|pi)$/);if(am)v=ALIAS[am[1]];
+  m.v=v;m.vOk=vNames.includes(v);
+  if(v&&!m.vOk)m.errs.push(['d□',`“${v}” isn’t one of the coordinates (${vNames.join(', ')}).`]);
+  const lim=(fld,name)=>{if(!fld.ast)return null;if(hasSym(fld.ast,vNames)){m.errs.push([name,'A limit can only use the given quantities and numbers, not a coordinate.']);return null;}
+    try{const x=ev(fld.ast,E);if(!isFinite(x)){m.errs.push([name,'This limit doesn’t give a finite number.']);return null;}return x;}catch(e){m.errs.push([name,e.message]);return null;}};
+  m.loV=lim(m.lo,'Lower limit');m.hiV=lim(m.hi,'Upper limit');
+  m.preV=0;
+  if(m.pre.ast){if(hasSym(m.pre.ast,vNames))m.errs.push(['Outside term','A term outside the integral can’t use a coordinate.']);else{try{m.preV=ev(m.pre.ast,E);}catch(e){m.errs.push(['Outside term',e.message]);m.preV=NaN;}}}
+  if(m.f.ast&&m.vOk){m.fx=fnOf(m.f.ast,E,v);
+    try{m.fx(m.loV!=null?m.loV:0.5);}catch(e){if(e.user){m.errs.push(['Integrand',`${e.message} Only ${v} changes inside this integral.`]);m.fx=null;}}}
+  if(m.fx&&m.loV!=null&&m.hiV!=null){
+    let I=NaN;try{I=simpson(m.fx,m.loV,m.hiV,600);}catch(e){}
+    if(!isFinite(I)){let bad=null;for(let i=0;i<=200;i++){const x=m.loV+(m.hiV-m.loV)*i/200;let y;try{y=m.fx(x);}catch(e){y=NaN;}if(!isFinite(y)){bad=x;break;}}
+      m.errs.push(['Integrand',bad!=null?`It has no finite value at ${v} = ${fmt(bad)} (dividing by zero, or a root or log of a negative number?).`:'It doesn’t give a finite total between these limits.']);}
+    else m.total=m.preV+I;}
+  if(m.f.ast&&m.vOk){try{m.strip=addd(dimOf(m.f.ast,D).d,D[v]);
+      if(m.lo.ast)m.loD=dimOf(m.lo.ast,D);if(m.hi.ast)m.hiD=dimOf(m.hi.ast,D);if(m.pre.ast)m.preD=dimOf(m.pre.ast,D).d;}catch(e){m.dimErr=e.message;}}
+  return m;}
+
+/* ---------- canvas helpers ---------- */
+function prep(cv){const W=cv.clientWidth||300,H=cv.clientHeight||260,d=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d);}
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,W,H);g.globalAlpha=1;g.setLineDash([]);return {g,W,H};}
+function txt(g,s,x,y,col,align='left',size=12,math=false,base='middle'){g.fillStyle=col;g.font=`${math?'italic ':''}${size}px ${math?'"STIX Two Text",serif':'"IBM Plex Sans",sans-serif'}`;g.textAlign=align;g.textBaseline=base;g.fillText(s,x,y);}
+function arrow(g,x1,y1,x2,y2,col,w=2,head=7){g.strokeStyle=col;g.fillStyle=col;g.lineWidth=w;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
+  const a=Math.atan2(y2-y1,x2-x1);if(Math.hypot(x2-x1,y2-y1)<2)return;g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.42),y2-head*Math.sin(a-0.42));g.lineTo(x2-head*Math.cos(a+0.42),y2-head*Math.sin(a+0.42));g.closePath();g.fill();}
+function line(g,x1,y1,x2,y2,col,w=1.5,dash){g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash||[]);g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.setLineDash([]);}
+function bracketV(g,x,y1,y2,col){line(g,x,y1,x,y2,col,2);line(g,x-4,y1,x+4,y1,col,2);line(g,x-4,y2,x+4,y2,col,2);}
+function bracketH(g,y,x1,x2,col){line(g,x1,y,x2,y,col,2);line(g,x1,y-4,x1,y+4,col,2);line(g,x2,y-4,x2,y+4,col,2);}
+function niceTicks(a,b,n){const span=b-a;if(!(span>0))return [a];const s0=span/n,mag=Math.pow(10,Math.floor(Math.log10(s0))),nm=s0/mag,step=(nm<1.5?1:nm<3?2:nm<7?5:10)*mag;
+  const t=[];for(let v=Math.ceil(a/step-1e-9)*step;v<=b+step*1e-9;v+=step)t.push(Math.abs(v)<step*1e-9?0:v);return t;}
+
+/* ---------- plots ---------- */
+function plot(cv,o){const {g,W,H}=prep(cv),c=colors(),L=62,R=16,T=26,B=34;
+  if(o.msg){txt(g,o.msg,W/2,H/2,c.ink3,'center',13);return;}
+  let [x0,x1]=o.xr;if(x0>x1)[x0,x1]=[x1,x0];if(!(x1>x0))x1=x0+1;
+  const N=300,vals=[];
+  const S=o.series.map(s=>{const p=[];for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N;let y;try{y=s.f(x);}catch(e){y=NaN;}p.push(y);if(isFinite(y))vals.push(y);}return p;});
+  let ymin=0,ymax=0;
+  if(vals.length){vals.sort((a,b)=>a-b);const q=k=>vals[clamp(Math.floor(k*(vals.length-1)),0,vals.length-1)];ymin=Math.min(0,q(0.01));ymax=Math.max(0,q(0.99));}
+  if(!(ymax-ymin>0)){ymax=ymin+1;}const pd=(ymax-ymin)*0.1;if(ymin<0)ymin-=pd;if(ymax>0)ymax+=pd;
+  const X=x=>L+(x-x0)/(x1-x0)*(W-L-R),Y=y=>T+(ymax-y)/(ymax-ymin)*(H-T-B);
+  g.lineWidth=1;
+  for(const v of niceTicks(x0,x1,4)){line(g,X(v),T,X(v),H-B,c.grid,1);txt(g,fmt(v,3),X(v),H-B+13,c.ink3,'center',11);}
+  for(const v of niceTicks(ymin,ymax,4)){line(g,L,Y(v),W-R,Y(v),c.grid,1);txt(g,fmt(v,3),L-6,Y(v),c.ink3,'right',11);}
+  line(g,L,Y(0),W-R,Y(0),c.ink3,1);line(g,L,T,L,H-B,c.rule,1);
+  g.save();g.beginPath();g.rect(L,T,W-L-R,H-T-B);g.clip();
+  if(o.gap){const [ia,ib]=o.gap.s,[ga,gb]=o.gap.xr;g.fillStyle=c.ref;g.globalAlpha=0.22;
+    for(let i=0;i<N;i++){const xa=x0+(x1-x0)*i/N,xb=x0+(x1-x0)*(i+1)/N;if(xa<Math.min(ga,gb)||xb>Math.max(ga,gb))continue;
+      const a1=S[ia][i],a2=S[ia][i+1],b1=S[ib][i],b2=S[ib][i+1];if(![a1,a2,b1,b2].every(isFinite))continue;
+      g.beginPath();g.moveTo(X(xa),Y(a1));g.lineTo(X(xb),Y(a2));g.lineTo(X(xb),Y(b2));g.lineTo(X(xa),Y(b1));g.closePath();g.fill();}
+    g.globalAlpha=1;}
+  if(o.strips){const {f,n,a,b}=o.strips,dx=(b-a)/n;
+    for(let i=0;i<n;i++){const xa=a+i*dx,xm=xa+dx/2;let y;try{y=f(xm);}catch(e){y=NaN;}if(!isFinite(y))continue;
+      const px=X(Math.min(xa,xa+dx)),pw=Math.abs(X(xa+dx)-X(xa)),py=Math.min(Y(y),Y(0)),ph=Math.abs(Y(y)-Y(0));
+      g.globalAlpha=0.16;g.fillStyle=c.acc;g.fillRect(px,py,pw,ph);g.globalAlpha=0.55;g.strokeStyle=c.acc;g.lineWidth=n>30?0.6:1;g.strokeRect(px,py,pw,ph);}
+    g.globalAlpha=1;}
+  o.series.forEach((s,k)=>{g.strokeStyle=s.col;g.lineWidth=s.w||2.4;g.setLineDash(s.dash||[]);g.beginPath();let on=false;
+    for(let i=0;i<=N;i++){const y=S[k][i],x=x0+(x1-x0)*i/N;if(!isFinite(y)||Math.abs(Y(y))>1e5){on=false;continue;}if(on)g.lineTo(X(x),Y(y));else{g.moveTo(X(x),Y(y));on=true;}}
+    g.stroke();g.setLineDash([]);});
+  (o.tangents||[]).forEach(tg=>{if(!isFinite(tg.y)||!isFinite(tg.m))return;const sp=(x1-x0)*0.2;line(g,X(tg.x-sp),Y(tg.y-tg.m*sp),X(tg.x+sp),Y(tg.y+tg.m*sp),tg.col,2,tg.dash);});
+  if(o.probe!=null&&isFinite(o.probe)){line(g,X(o.probe),T,X(o.probe),H-B,c.ink2,1,[4,4]);}
+  (o.pts||[]).forEach(p=>{if(!isFinite(p.y))return;g.fillStyle=p.col;g.beginPath();g.arc(X(p.x),Y(p.y),4.5,0,7);g.fill();g.strokeStyle=c.panel;g.lineWidth=1.5;g.stroke();});
+  g.restore();
+  txt(g,o.yl||'',L,12,c.ink2,'left',12);txt(g,o.xl||'',W-R,H-8,c.ink2,'right',12);
+  if(o.legend){let x=W-R;for(let i=o.legend.length-1;i>=0;i--){const [lab,col]=o.legend[i];g.font='12px "IBM Plex Sans",sans-serif';const w=g.measureText(lab).width;txt(g,lab,x,12,c.ink2,'right',12);line(g,x-w-22,12,x-w-6,12,col,2.4);x-=w+32;}}}
+
+/* ---------- scenes ---------- */
+function stars(g,W,H,c,seed){const r=mulberry(seed);g.fillStyle=c.ink3;for(let i=0;i<45;i++){g.globalAlpha=0.25+0.5*r();g.fillRect(r()*W,r()*H,1.4,1.4);}g.globalAlpha=1;}
+function rock(g,x,y,rad,c){g.fillStyle=c.metal;g.strokeStyle=c.ink2;g.lineWidth=1.2;g.beginPath();for(let i=0;i<9;i++){const a=i/9*Math.PI*2,rr=rad*(0.78+0.22*Math.sin(i*2.7+1));g.lineTo(x+rr*Math.cos(a),y+rr*Math.sin(a));}g.closePath();g.fill();g.stroke();}
+const SCN={
+rod(g,W,H,P,st,c){const L=P.L,x0=36,x1=W-36,y=H*0.48,sx=x=>x0+(x1-x0)*x/L,h0=14,h1=14*Math.sqrt(P['λ1']/P['λ0']);
+  g.fillStyle=c.metal;g.beginPath();g.moveTo(x0,y-h0);g.lineTo(x1,y-h1);g.lineTo(x1,y+h1);g.lineTo(x0,y+h0);g.closePath();g.fill();g.strokeStyle=c.ink2;g.lineWidth=1.5;g.stroke();
+  txt(g,'thin end',x0,y-h1-24,c.ink2,'left',12);txt(g,'thick end',x1,y-h1-24,c.ink2,'right',12);
+  txt(g,'x = 0',x0,y+h1+22,c.ink3,'center',12,true);txt(g,'x = L',x1,y+h1+22,c.ink3,'center',12,true);
+  if(st.lo!=null)bracketH(g,y+h1+42,sx(clamp(st.lo,-0.1*L,1.1*L)),sx(clamp(st.hi,-0.1*L,1.1*L)),c.acc);
+  const x=st.x,inside=x>=0&&x<=L,hh=h0+(h1-h0)*clamp(x/L,0,1),w=Math.max(3,(x1-x0)*0.018);
+  g.globalAlpha=inside?0.9:0.35;g.fillStyle=c.acc;g.fillRect(sx(x)-w/2,y-hh-4,w,2*hh+8);g.globalAlpha=1;
+  txt(g,'dx',sx(x),y-hh-12,c.acc,'center',13,true);},
+lift(g,W,H,P,st,c){const Ht=2*P.vmax*P.T/Math.PI,yb=H-24,yt=22,s=(yb-yt)/Ht,cx=W*0.42,sw=58;
+  g.fillStyle=c.paper;g.fillRect(cx-sw/2,yt,sw,yb-yt);g.strokeStyle=c.rule;g.lineWidth=1.5;g.strokeRect(cx-sw/2,yt,sw,yb-yt);
+  for(let i=0;i<=8;i++){const yy=yb-(yb-yt)*i/8;line(g,cx+sw/2,yy,cx+sw/2+8,yy,c.ink3,1);}
+  const t=clamp(st.x,0,P.T),hgt=P.vmax*P.T/Math.PI*(1-Math.cos(Math.PI*t/P.T)),v=P.vmax*Math.sin(Math.PI*t/P.T),cy=yb-hgt*s;
+  g.fillStyle=c.metal;g.fillRect(cx-sw/2+6,cy-34,sw-12,34);g.strokeStyle=c.ink2;g.strokeRect(cx-sw/2+6,cy-34,sw-12,34);
+  line(g,cx,yt,cx,cy-34,c.ink3,1);
+  if(v>0.05)arrow(g,cx+sw/2+28,cy-17,cx+sw/2+28,cy-17-40*v/P.vmax,c.acc,2.4);
+  txt(g,'v',cx+sw/2+38,cy-30,c.acc,'left',14,true);
+  txt(g,'ground',cx,yb+12,c.ink3,'center',11);},
+ball(g,W,H,P,st,c){const g9=g0,ymax=P.h0+P.v0*P.v0/(2*g9),yb=H-24,s=(yb-26)/ymax,cx=W*0.45,y=t=>Math.max(0,P.h0+P.v0*t-g9*t*t/2);
+  line(g,20,yb,W-20,yb,c.ink3,1.5);g.fillStyle=c.metal;g.fillRect(cx-46,yb-P.h0*s,22,P.h0*s);
+  const tt=clamp(st.x,st.dom[0],st.dom[1]);
+  for(let i=0;i<=24;i++){const t=st.dom[0]+(tt-st.dom[0])*i/24;g.globalAlpha=0.12+0.5*i/24;g.fillStyle=c.acc;g.beginPath();g.arc(cx+i*3.2-38,yb-y(t)*s,3,0,7);g.fill();}
+  g.globalAlpha=1;g.fillStyle=c.acc;g.beginPath();g.arc(cx+40,yb-y(tt)*s-8,9,0,7);g.fill();
+  txt(g,'y',cx+60,yb-y(tt)*s-8,c.ink2,'left',14,true);},
+road(g,W,H,P,st,c){const Ts=Math.sqrt(2*P.v0/P.k),dTot=2/3*P.v0*Ts,x0=30,x1=W-30,s=(x1-x0-60)/(dTot*1.05),yr=H*0.62;
+  g.fillStyle=c.metal;g.globalAlpha=0.35;g.fillRect(0,yr,W,34);g.globalAlpha=1;
+  for(let x=0;x<W;x+=34)line(g,x,yr+17,x+16,yr+17,c.panel,2);
+  const t=clamp(st.x,0,Ts*1.4),tc=Math.min(t,Ts),xpos=P.v0*tc-P.k*tc**3/6,v=Math.max(0,P.v0-P.k*tc*tc/2),cx=x0+xpos*s;
+  g.fillStyle=c.acc;g.beginPath();g.moveTo(cx,yr-6);g.lineTo(cx+56,yr-6);g.lineTo(cx+56,yr-18);g.lineTo(cx+40,yr-30);g.lineTo(cx+14,yr-30);g.lineTo(cx+4,yr-18);g.lineTo(cx,yr-18);g.closePath();g.fill();
+  g.fillStyle=c.ink;[cx+12,cx+44].forEach(wx=>{g.beginPath();g.arc(wx,yr-5,6,0,7);g.fill();});
+  line(g,x0,yr-48,x0,yr+44,c.ink3,1,[3,3]);txt(g,'brakes on',x0,yr-56,c.ink3,'left',11);
+  if(v>0.1)arrow(g,cx+64,yr-18,cx+64+40*v/P.v0,yr-18,c.ink2,2);
+  txt(g,v>0.1?'still moving':'stopped',cx+28,yr+50,c.ink2,'center',12);},
+tank(g,W,H,P,st,c){const R=P.R,Ht=P.H,s=Math.min((H-50)/(Ht+P.a),(W*0.42)/(2*R)),tw=Math.max(40,2*R*s),th=Ht*s,cx=W*0.44,yb=H-24,yt=yb-th,xl=cx-tw/2,xr=cx+tw/2,yo=yt-P.a*s;
+  g.globalAlpha=0.6;g.fillStyle=c.water;g.fillRect(xl,yt,tw,th);g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2;g.beginPath();g.moveTo(xl,yt-6);g.lineTo(xl,yb);g.lineTo(xr,yb);g.lineTo(xr,yt-6);g.stroke();
+  g.lineWidth=3;g.strokeStyle=c.metal;g.beginPath();g.moveTo(cx,yb-6);g.lineTo(cx,yo);g.lineTo(xr+46,yo);g.lineTo(xr+46,yo+12);g.stroke();
+  txt(g,'outlet',xr+52,yo+8,c.ink3,'left',11);
+  line(g,xr+70,yt,xr+70,yb,c.ink3,1);txt(g,'H',xr+76,(yt+yb)/2,c.ink3,'left',13,true);
+  line(g,xr+70,yo,xr+70,yt,c.ink3,1,[3,3]);txt(g,'a',xr+76,(yo+yt)/2,c.ink3,'left',13,true);
+  line(g,cx,yb-8,xr,yb-8,c.ink3,1);txt(g,'R',(cx+xr)/2,yb-16,c.ink3,'center',13,true);
+  if(st.lo!=null)bracketV(g,xl-16,yb-clamp(st.lo,-0.1*Ht,1.1*Ht)*s,yb-clamp(st.hi,-0.1*Ht,1.1*Ht)*s,c.acc);
+  const y=st.x,inside=y>=0&&y<=Ht,ys=yb-y*s,bh=Math.max(4,0.035*th);
+  g.globalAlpha=inside?0.9:0.35;g.fillStyle=c.acc;g.fillRect(xl,ys-bh/2,tw,bh);g.globalAlpha=1;
+  if(inside&&ys-yo>14)arrow(g,xr+26,ys,xr+26,yo,c.ink,2);
+  txt(g,'dy',xl-30,ys,c.acc,'right',13,true);},
+dam(g,W,H,P,st,c){const D=P.D,yb=H-22,s=(H-60)/(D*1.15),wx=W*0.66,ws=yb-D*s,top=yb-D*1.15*s;
+  g.globalAlpha=0.6;g.fillStyle=c.water;g.fillRect(16,ws,wx-16,yb-ws);g.globalAlpha=1;
+  g.fillStyle=c.metal;g.beginPath();g.moveTo(wx,top);g.lineTo(wx+22,top);g.lineTo(wx+60,yb);g.lineTo(wx,yb);g.closePath();g.fill();
+  line(g,8,yb,W-8,yb,c.ink2,1.5);
+  const gt=yb-P.b*s;g.fillStyle=c.ink2;g.globalAlpha=0.55;g.fillRect(wx,gt,10,yb-gt);g.globalAlpha=1;
+  txt(g,'gate',wx+14,gt+10,c.ink,'left',11);line(g,wx+64,gt,wx+64,yb,c.ink3,1);txt(g,'b',wx+68,(gt+yb)/2,c.ink3,'left',13,true);
+  for(let k=1;k<=6;k++){const f=k/6.6,yy=ws+f*(yb-ws),len=10+52*f;arrow(g,wx-len-4,yy,wx-4,yy,c.ink2,1.4,5);}
+  line(g,28,ws,28,yb,c.ink3,1);txt(g,'D',34,(ws+yb)/2,c.ink3,'left',13,true);
+  if(st.lo!=null)bracketV(g,wx+84,yb-clamp(st.lo,-0.1*D,1.15*D)*s,yb-clamp(st.hi,-0.1*D,1.15*D)*s,c.acc);
+  const y=st.x,inside=y>=0&&y<=P.b,ys=yb-y*s,bh=Math.max(4,0.04*D*s);
+  g.globalAlpha=inside?0.9:0.35;g.fillStyle=c.acc;g.fillRect(wx-2,ys-bh/2,8,bh);g.globalAlpha=1;
+  txt(g,'dy',wx+16,ys,c.acc,'left',13,true);
+  txt(g,'water',60,ws+16,c.ink2,'left',12);},
+cone(g,W,H,P,st,c){const R=P.R,Ht=P.H,s=Math.min((H-60)/Ht,(W*0.6)/(2*R)),cx=W*0.45,yb=H-22,yt=yb-Ht*s,hw=R*s;
+  const h=clamp(st.x,0,Ht),wl=yb-h*s,rw=R*h/Ht*s;
+  g.globalAlpha=0.6;g.fillStyle=c.water;g.beginPath();g.moveTo(cx,yb);g.lineTo(cx-rw,wl);g.lineTo(cx+rw,wl);g.closePath();g.fill();g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2;g.beginPath();g.moveTo(cx-hw,yt);g.lineTo(cx,yb);g.lineTo(cx+hw,yt);g.stroke();
+  line(g,cx-rw,wl,cx+rw,wl,c.acc,2.5);
+  arrow(g,cx-hw-18,yt-14,cx-hw*0.45,yt+8,c.acc,2);txt(g,'Q',cx-hw-24,yt-18,c.acc,'right',13,true);
+  line(g,cx+hw+20,wl,cx+hw+20,yb,c.ink3,1);txt(g,'h',cx+hw+26,(wl+yb)/2,c.ink3,'left',13,true);
+  line(g,cx,wl-6,cx+rw,wl-6,c.ink3,1);txt(g,'r',cx+rw/2,wl-14,c.ink3,'center',13,true);
+  txt(g,'R',cx+hw/2,yt-10,c.ink3,'center',13,true);},
+spring(g,W,H,P,st,c){const X=P.X,x0=28,base=W*0.28,s=(W*0.44)/X,cy=H*0.5,ext=clamp(st.x,0,X*1.2),bx=x0+base+ext*s;
+  g.fillStyle=c.metal;g.fillRect(x0-12,cy-50,12,100);
+  g.strokeStyle=c.ink2;g.lineWidth=1.8;g.beginPath();g.moveTo(x0,cy);const n=14,seg=(bx-x0-16)/n;g.lineTo(x0+8,cy);
+  for(let i=0;i<n;i++)g.lineTo(x0+8+seg*(i+0.5),cy+(i%2?-14:14));g.lineTo(bx-8,cy);g.lineTo(bx,cy);g.stroke();
+  g.fillStyle=c.acc;g.fillRect(bx,cy-20,34,40);
+  const F=P.k*ext+P['β']*ext**3,Fm=P.k*X+P['β']*X**3;if(ext>0)arrow(g,bx+40,cy,bx+40+70*F/Fm,cy,c.ink,2.2);
+  txt(g,'F',bx+48,cy-14,c.ink,'left',14,true);
+  line(g,x0+base+34,cy+40,x0+base+34,cy+56,c.ink3,1);line(g,bx+34,cy+40,bx+34,cy+56,c.ink3,1);line(g,x0+base+34,cy+48,bx+34,cy+48,c.ink3,1);
+  txt(g,'x',(x0+base+bx)/2+34,cy+64,c.ink3,'center',13,true);txt(g,'rest length',x0+base+34,cy-36,c.ink3,'center',11);line(g,x0+base+34,cy-28,x0+base+34,cy+24,c.ink3,1,[3,3]);},
+earth(g,W,H,P,st,c){const R=P.R,Rt=P.R+P.h,ox=30,oy=H-18,s=Math.min((W-60),(H-30)*1.25)/Rt,ang=-0.55;
+  g.fillStyle=c.water;g.globalAlpha=0.5;g.beginPath();g.arc(ox,oy,R*s,0,Math.PI*2);g.fill();g.globalAlpha=1;g.strokeStyle=c.ink2;g.lineWidth=1.5;g.beginPath();g.arc(ox,oy,R*s,-Math.PI/2,0);g.stroke();
+  g.setLineDash([4,4]);g.strokeStyle=c.ink3;g.beginPath();g.arc(ox,oy,Rt*s,-Math.PI/2,0);g.stroke();g.setLineDash([]);
+  txt(g,'Earth',ox+R*s*0.3,oy-R*s*0.2,c.ink2,'left',12);txt(g,'target altitude',ox+Rt*s*Math.cos(-0.15)+4,oy+Rt*s*Math.sin(-0.15),c.ink3,'left',11);
+  if(st.lo!=null){const a=clamp(st.lo,R*0.9,Rt*1.1),b=clamp(st.hi,R*0.9,Rt*1.1);g.strokeStyle=c.acc;g.globalAlpha=0.22;g.lineWidth=Math.abs(b-a)*s;g.beginPath();g.arc(ox,oy,(a+b)/2*s,-Math.PI/2,0);g.stroke();g.globalAlpha=1;}
+  line(g,ox,oy,ox+Rt*1.05*s*Math.cos(ang),oy+Rt*1.05*s*Math.sin(ang),c.ink3,1);
+  const r=st.x,inside=r>=R&&r<=Rt;g.strokeStyle=c.acc;g.lineWidth=3;g.globalAlpha=inside?0.9:0.35;g.beginPath();g.arc(ox,oy,r*s,ang-0.12,ang+0.12);g.stroke();g.globalAlpha=1;
+  const sx=ox+r*s*Math.cos(ang),sy=oy+r*s*Math.sin(ang);g.fillStyle=c.ink;g.fillRect(sx-5,sy-5,10,10);line(g,sx-12,sy+4,sx-6,sy,c.ink,2);line(g,sx+6,sy,sx+12,sy-4,c.ink,2);
+  txt(g,'r',ox+r*s*0.5*Math.cos(ang)+8,oy+r*s*0.5*Math.sin(ang)-6,c.ink3,'left',13,true);},
+disc(g,W,H,P,st,c){const R=P.R,cx=W*0.45,cy=H*0.5,s=(H*0.4)/R;
+  g.fillStyle=c.metal;g.globalAlpha=0.55;g.beginPath();g.arc(cx,cy,R*s,0,7);g.fill();g.globalAlpha=1;g.strokeStyle=c.ink2;g.lineWidth=1.5;g.stroke();
+  g.fillStyle=c.ink;g.beginPath();g.arc(cx,cy,3,0,7);g.fill();
+  if(st.lo!=null){const a=clamp(Math.min(st.lo,st.hi),0,R*1.1),b=clamp(Math.max(st.lo,st.hi),0,R*1.1);g.strokeStyle=c.acc;g.globalAlpha=0.18;g.lineWidth=(b-a)*s;g.beginPath();g.arc(cx,cy,Math.max(0.5,(a+b)/2*s),0,7);g.stroke();g.globalAlpha=1;}
+  const r=st.x,inside=r>=0&&r<=R;g.strokeStyle=c.acc;g.lineWidth=Math.max(3,0.04*R*s);g.globalAlpha=inside?0.95:0.35;g.beginPath();g.arc(cx,cy,Math.max(0.5,r*s),0,7);g.stroke();g.globalAlpha=1;
+  line(g,cx,cy,cx+r*s*Math.cos(-0.7),cy+r*s*Math.sin(-0.7),c.ink,1.5);txt(g,'r',cx+r*s*0.5*Math.cos(-0.7)+6,cy+r*s*0.5*Math.sin(-0.7)-8,c.ink,'left',13,true);
+  line(g,cx,cy+R*s+12,cx+R*s,cy+R*s+12,c.ink3,1);txt(g,'R',cx+R*s/2,cy+R*s+22,c.ink3,'center',13,true);
+  g.strokeStyle=c.ink3;g.lineWidth=1.2;g.beginPath();g.arc(cx,cy,R*s+18,-2.4,-1.6);g.stroke();arrow(g,cx+(R*s+18)*Math.cos(-1.62),cy+(R*s+18)*Math.sin(-1.62),cx+(R*s+18)*Math.cos(-1.5),cy+(R*s+18)*Math.sin(-1.5),c.ink3,1.2,6);},
+atoms(g,W,H,P,st,c){const a=P.a,s=(W*0.62)/(2.2*a),cx=W*0.5,cy=H*0.48,x=clamp(st.x,st.dom[0],st.dom[1]),rad=0.44*a*s;
+  [cx-x*s/2,cx+x*s/2].forEach(px=>{g.fillStyle=c.acc;g.globalAlpha=0.85;g.beginPath();g.arc(px,cy,rad,0,7);g.fill();g.globalAlpha=1;});
+  line(g,cx-x*s/2,cy+rad+16,cx+x*s/2,cy+rad+16,c.ink3,1);line(g,cx-x*s/2,cy+rad+10,cx-x*s/2,cy+rad+22,c.ink3,1);line(g,cx+x*s/2,cy+rad+10,cx+x*s/2,cy+rad+22,c.ink3,1);
+  txt(g,'x',cx,cy+rad+30,c.ink3,'center',13,true);
+  line(g,cx-a*s/2,cy-rad-24,cx+a*s/2,cy-rad-24,c.ink3,1,[3,3]);txt(g,'lowest-energy spacing a',cx,cy-rad-36,c.ink3,'center',11);},
+rocket(g,W,H,P,st,c){stars(g,W,H,c,7);const m1=P.m0-P.q*P.T,xT=P.u*(P.T-(m1/P.q)*Math.log(P.m0/m1)),vT=P.u*Math.log(P.m0/m1),x0=30,x1=W-40,s=(x1-x0)/(xT*1.12),y=H*0.55;
+  line(g,x0,y,x1+20,y,c.ink3,1,[2,5]);
+  const t=clamp(st.x,0,P.T*1.3);let xp;if(t<=P.T){xp=P.u*(t-((P.m0-P.q*t)/P.q)*Math.log(P.m0/(P.m0-P.q*t)));}else xp=xT+vT*(t-P.T);
+  const px=x0+xp*s,acc=t<=P.T?P.u*P.q/(P.m0-P.q*t):0,aT=P.u*P.q/m1;
+  if(acc>0){g.fillStyle=c.hot;g.beginPath();g.moveTo(px-12,y-5);g.lineTo(px-12-30*acc/aT-6,y);g.lineTo(px-12,y+5);g.closePath();g.fill();}
+  g.fillStyle=c.ink;g.beginPath();g.moveTo(px+14,y);g.lineTo(px-12,y-8);g.lineTo(px-12,y+8);g.closePath();g.fill();
+  const ax=x0+xT*s;g.strokeStyle=c.ref;g.setLineDash([3,3]);g.lineWidth=1.2;g.beginPath();g.arc(ax,y,16,0,7);g.stroke();g.setLineDash([]);
+  rock(g,ax+6,y-52,12,c);arrow(g,ax+6,y-36,ax+2,y-20,c.ink3,1.2,5);
+  txt(g,'engine cut-off point',ax,y+30,c.ref,'center',11);
+  txt(g,t<=P.T?'burning':'coasting',px,y-22,c.ink2,'center',11);},
+track(g,W,H,P,st,c){stars(g,W,H,c,3);const xT=TPL.find(z=>z.id==='track').ans.f(P),xs=P.x0*0.85,xe=Math.max(xT,P.x0+P.v0*P.T)*1.04,X=v=>40+(v-xs)/(xe-xs)*(W-70),y=H*0.5;
+  g.fillStyle=c.ink2;g.beginPath();g.moveTo(14,y+12);g.lineTo(26,y-6);g.lineTo(38,y+12);g.closePath();g.fill();txt(g,'radar',26,y+26,c.ink3,'center',11);
+  line(g,40,y,W-20,y,c.ink3,1,[2,5]);
+  const t=clamp(st.x,0,P.T*1.1),xt=P.x0+P.v0*t+P['α']/P['ω']*(t-Math.sin(P['ω']*t)/P['ω']),xn=P.x0+P.v0*t;
+  g.strokeStyle=c.ink3;g.lineWidth=1.2;g.setLineDash([3,3]);g.beginPath();g.arc(X(xn),y,11,0,7);g.stroke();g.setLineDash([]);
+  txt(g,'straight-line guess',X(xn),y+30,c.ink3,'center',11);
+  rock(g,X(xt),y,11,c);txt(g,'asteroid',X(xt),y-26,c.ink2,'center',11);
+  line(g,X(P.x0),y+44,X(P.x0),y+56,c.ink3,1);txt(g,'first tracked',X(P.x0),y+66,c.ink3,'center',11);},
+los(g,W,H,P,st,c){stars(g,W,H,c,11);const cx=W/2,cy=H-26,Dpx=H*0.62,s=Dpx/P.D,yP=cy-Dpx,t=clamp(st.x,st.dom[0],st.dom[1]),tx=cx+P.u*t*s;
+  line(g,0,yP,W,yP,c.ink3,1,[2,5]);txt(g,'asteroid path',8,yP-10,c.ink3,'left',11);
+  line(g,cx,cy,cx,yP,c.ink3,1,[3,3]);txt(g,'D',cx+6,(cy+yP)/2,c.ink3,'left',13,true);
+  line(g,cx,cy,tx,yP,c.acc,2);
+  const th=Math.atan(P.u*t/P.D);g.strokeStyle=c.acc;g.lineWidth=1.5;g.beginPath();g.arc(cx,cy,34,-Math.PI/2,-Math.PI/2+th,th<0);g.stroke();
+  txt(g,'θ',cx+44*Math.sin(th/2)+(th>=0?4:-12),cy-44*Math.cos(th/2),c.acc,'left',14,true);
+  rock(g,tx,yP,10,c);arrow(g,tx+14,yP,tx+40,yP,c.ink2,1.5,5);
+  g.fillStyle=c.ink2;g.beginPath();g.moveTo(cx-12,cy+12);g.lineTo(cx,cy-4);g.lineTo(cx+12,cy+12);g.closePath();g.fill();}
+};
+
+/* ---------- rendering ---------- */
+function renderList(){const el=$('#list');el.innerHTML=TIERS.map(tr=>`<div class="tier"><h4>${tr}</h4><div class="plist">${TPL.map((t,i)=>t.tier!==tr?'':
+  `<button class="pbtn" type="button" data-i="${i}" aria-current="${i===cur}"><span class="k">${t.kind==='int'?'∫':'d'}</span><span>${t.title}</span>${solved.has(t.id)?'<span class="ok" aria-label="solved">✓</span>':''}</button>`).join('')}</div></div>`).join('');
+  el.querySelectorAll('.pbtn').forEach(b=>b.onclick=()=>loadProblem(+b.dataset.i));}
+function uLab(u){const n=uName(u);return n==='no units'?'—':n;}
+function valCell(s){const v=P[s[0]];return `${fmt(v,4)} ${s[1]&&!zerod(s[1])?uName(s[1]):''}`;}
+function renderProblem(){const t=TPL[cur],st=state();
+  $('#p-tier').textContent=t.tier;const k=$('#p-kind');k.textContent=t.kind==='int'?'Integral':'Derivative';k.className='tag '+t.kind;
+  $('#p-title').textContent=t.title;$('#p-text').innerHTML=t.text;
+  $('#p-given').innerHTML=t.sym.map(s=>`<tr><td class="s">${S(s[0])}</td><td class="d">${s[2]}</td><td class="v">${valCell(s)}</td></tr>`).join('');
+  $('#p-phys').innerHTML=t.phys.map(p=>`<li>${p}</li>`).join('');
+  $('#p-vars-h').textContent=t.kind==='int'?'Coordinates you can slice along':'Variable';
+  $('#p-vars').innerHTML=t.vars.map(v=>`<tr><td class="s">${S(v[0])}</td><td class="d">${v[2]}</td><td class="v">${uLab(v[1])}</td></tr>`).join('');
+  const chip=(html,ins,cls,title)=>`<button class="chip ${cls}" type="button" draggable="true" data-ins="${ins}" data-cls="${cls}" title="${title}">${html}</button>`;
+  const fns=[['√','√(','square root'],['sin','sin(','sine'],['cos','cos(','cosine'],['ln','ln(','natural log'],['exp','exp(','e to the power'],['atan','atan(','inverse tangent'],['π','π','pi']];
+  if(t.kind==='int'||t.id==='brake')fns.push(['∫ nested','∫(','an integral inside the integral: ∫(integrand, variable, from, to)']);
+  $('#palette').innerHTML=
+    `<div class="pgroup"><span class="gl">Quantities</span>${t.sym.map(s=>chip(S(s[0]),s[0],'sym',s[2])).join('')}</div>`+
+    `<div class="pgroup"><span class="gl">${t.kind==='int'?'Coordinates':'Variable'}</span>${t.vars.map(v=>chip(S(v[0]),v[0],'var',v[2])).join('')}</div>`+
+    `<div class="pgroup"><span class="gl">Functions</span>${fns.map(f=>chip(f[0],f[1],'fn',f[2])).join('')}</div>`;
+  $('#help').innerHTML=t.kind==='int'
+    ?`Drag a block into a field, or click it to insert where your cursor is. Type the operators, numbers and brackets yourself: <code>+ − * / ^ ( )</code>. Put the coordinate you slice along after <i class="mv">d</i>. A nested integral is written <code>∫(integrand, variable, from, to)</code>.`
+    :`Drag a block into the field, or click it to insert where your cursor is. Type the operators, numbers and brackets yourself: <code>+ − * / ^ ( )</code>.`;
+  const eq=$('#eq');
+  if(t.kind==='int'){
+    eq.innerHTML=`<span class="lhs">${t.ans.lhs} =</span><span id="pre-w" ${st.showPre?'':'hidden'} style="display:inline-flex;align-items:center;gap:8px"><input id="in-pre" class="fx pre" placeholder="outside term" autocomplete="off" spellcheck="false" aria-label="Term outside the integral"><span class="plus">+</span></span>`+
+      `<span class="intsign" aria-hidden="true">∫</span><span class="lims"><input id="in-hi" class="lim" placeholder="to" autocomplete="off" spellcheck="false" aria-label="Upper limit"><input id="in-lo" class="lim" placeholder="from" autocomplete="off" spellcheck="false" aria-label="Lower limit"></span>`+
+      `<input id="in-f" class="fx grow" placeholder="integrand" autocomplete="off" spellcheck="false" aria-label="Integrand"><span class="dee">d</span><input id="in-v" class="var" placeholder="?" autocomplete="off" spellcheck="false" aria-label="Integration variable">`;
+    $('#b-pre').hidden=false;$('#b-pre').textContent=st.showPre?'− Remove the outside term':'+ Add a term outside the integral';
+  }else{
+    eq.innerHTML=`<span class="lhs">${t.ans.lhs} =</span><input id="in-f" class="fx grow" placeholder="your expression" autocomplete="off" spellcheck="false" aria-label="Your expression">`;
+    $('#b-pre').hidden=true;}
+  const map={'in-f':'f','in-lo':'lo','in-hi':'hi','in-v':'v','in-pre':'pre'};
+  for(const id in map){const el=document.getElementById(id);if(!el)continue;el.value=st[map[id]]||'';
+    el.addEventListener('input',()=>{state()[map[id]]=el.value;schedule();});
+    el.addEventListener('focus',()=>{lastField=el;});}
+  const vin=$('#in-v');if(vin){vin.addEventListener('dragover',e=>e.preventDefault());vin.addEventListener('drop',e=>{e.preventDefault();vin.value=(e.dataTransfer.getData('text/plain')||'').trim();vin.dispatchEvent(new Event('input'));});}
+  lastField=$('#in-f');
+  document.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',ch.dataset.ins);e.dataTransfer.effectAllowed='copy';});
+    ch.addEventListener('mousedown',e=>e.preventDefault());
+    ch.addEventListener('click',()=>insertChip(ch.dataset.ins));});
+  $('#fig-a').hidden=t.kind==='der'&&!t.given;
+  $('#fig-b').hidden=t.kind==='int';
+  $('#fig-b').classList.toggle('wide',!!t.given);
+  $('#sl-n-w').hidden=t.kind!=='int';
+  $('#sl-p-l').textContent=t.kind==='int'?'Move the slice':`Move along ${t.v}`;
+  renderFeedback();renderHints();renderList();}
+function insertChip(ins){const el=lastField||$('#in-f');if(!el)return;
+  if(el.id==='in-v'){el.value=ins;el.focus();el.dispatchEvent(new Event('input'));return;}
+  const s=el.selectionStart??el.value.length,e=el.selectionEnd??s,before=el.value.slice(0,s),after=el.value.slice(e);
+  let t=ins;if(/[\p{L}\p{N})]$/u.test(before))t=' '+t;
+  el.value=before+t+after;const pos=before.length+t.length;el.focus();try{el.setSelectionRange(pos,pos);}catch(_){}
+  el.dispatchEvent(new Event('input'));}
+function loadProblem(i){cur=i;const st=state();P=mkParams(TPL[cur],st.seed);renderProblem();update();
+  if(window.innerWidth<900)$('#prob').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
+function schedule(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;update();});}
+
+function slotOr(fld){return fld.ast?pp(fld.ast,0):fld.err?'<span class="slot bad"></span>':'<span class="slot"></span>';}
+function renderPreview(m){const t=TPL[cur];let h;
+  if(t.kind==='int'){const st=state();
+    h=`<span class="pl">Reads as</span><span>${t.ans.lhs} = ${m.pre.ast?pp(m.pre.ast,1)+' + ':(st.showPre?'<span class="slot"></span> + ':'')}<span class="isig">∫</span><span class="ilim"><span>${slotOr(m.hi)}</span><span>${slotOr(m.lo)}</span></span>${m.f.ast?pp(m.f.ast,1.5):slotOr(m.f)} <i class="mv">d</i>${m.v?S(m.v):'<span class="slot"></span>'}</span>`;}
+  else h=`<span class="pl">Reads as</span><span>${t.ans.lhs} = ${slotOr(m.f)}</span>`;
+  $('#preview').innerHTML=h;
+  $('#perr').innerHTML=m.errs.map(([k,v])=>`<div><b>${k}:</b> ${v}</div>`).join('');}
+
+function sceneState(m){const t=TPL[cur],r=refOf(t),st={};
+  if(t.kind==='int'){if(m.vOk&&m.v===r.v&&m.loV!=null&&m.hiV!=null){st.x=m.loV+probe*(m.hiV-m.loV);st.lo=m.loV;st.hi=m.hiV;}else{st.x=r.lo+probe*(r.hi-r.lo);st.lo=null;}}
+  else{st.dom=r.dom;st.x=r.dom[0]+probe*(r.dom[1]-r.dom[0]);}
+  return st;}
+function drawScene(m){const t=TPL[cur],{g,W,H}=prep($('#cv-s')),c=colors(),st=sceneState(m);SCN[t.scene](g,W,H,P,st,c);
+  const r=refOf(t),vn=t.kind==='int'?(m.vOk&&m.v===r.v&&m.loV!=null&&m.hiV!=null?m.v:r.v):t.v,vu=t.vars.find(v=>v[0]===vn)[1];
+  let cap=`${S(vn)} = ${fmt(st.x,4)} ${uLab(vu)}`;
+  if(t.kind==='int'){if(m.fx&&m.v===vn){let y;try{y=m.fx(st.x);}catch(e){y=NaN;}cap+=` · your integrand here: ${fmt(y,4)}`;}
+    if(st.lo==null)cap+=` · <span style="color:var(--ink-3)">the slice follows ${S(r.v)}; fill in your limits to sweep your own range</span>`;}
+  $('#cap-s').innerHTML=cap;}
+function drawGraphs(m){const t=TPL[cur],r=refOf(t),c=colors(),st=state();
+  if(t.kind==='int'){const cv=$('#cv-a');
+    if(!m.f.ast){plot(cv,{msg:'Build the integrand to see its graph'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
+    if(!m.vOk){plot(cv,{msg:'Put the coordinate you slice along after d'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
+    if(m.loV==null||m.hiV==null||!m.fx){plot(cv,{msg:m.fx?'Fill in both limits to see your strips':'Fix the integrand to see its graph'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
+    const same=m.v===r.v,showRef=st.hint>=2&&same;
+    const lo=Math.min(m.loV,m.hiV),hi=Math.max(m.loV,m.hiV);let xr=[lo,hi];if(showRef)xr=[Math.min(lo,r.lo,r.hi),Math.max(hi,r.lo,r.hi)];
+    const fRef=x=>(x<Math.min(r.lo,r.hi)-1e-12||x>Math.max(r.lo,r.hi)+1e-12)?NaN:r.fx(x);
+    const fUser=x=>(x<lo-1e-12||x>hi+1e-12)?NaN:m.fx(x);
+    const series=[{f:fUser,col:c.acc}];if(showRef)series.push({f:fRef,col:c.ref,dash:[6,4]});
+    const xu=t.vars.find(v=>v[0]===m.v)[1];
+    plot(cv,{xr,series,strips:{f:m.fx,n:nStrips,a:m.loV,b:m.hiV},gap:showRef?{s:[0,1],xr:[Math.max(lo,Math.min(r.lo,r.hi)),Math.min(hi,Math.max(r.lo,r.hi))]}:null,
+      probe:m.loV+probe*(m.hiV-m.loV),xl:`${m.v} (${uLab(xu)})`,yl:`integrand of ${m.v}`,legend:showRef?[['yours',c.acc],['correct',c.ref]]:null});
+    $('#cap-a').innerHTML=`Your integrand between your limits. Each strip is the integrand × <i class="mv">d</i>${S(m.v)}; the integral is what the strips add up to as they get thinner.`;
+    const dx=(m.hiV-m.loV)/nStrips;let sum=0;for(let i=0;i<nStrips;i++){try{sum+=m.fx(m.loV+(i+0.5)*dx)*dx;}catch(e){sum=NaN;}}
+    $('#readout').innerHTML=`Sum of ${nStrips} strip${nStrips>1?'s':''}: <b>${fmt(sum+(m.preV||0),5)}</b> · Your integral${m.pre.ast?' plus the outside term':''}: <b>${fmt(m.total,5)}</b>`;
+  }else{const x=r.dom[0]+probe*(r.dom[1]-r.dom[0]),xu=t.vars[0][1],xl=`${t.v} (${uLab(xu)})`;
+    if(t.given){const gy=r.gx(x),tg=[];if(st.hint>=2){tg.push({x,y:gy,m:t.given.sign*r.fx(x),col:c.ref});if(m.fx){let uy;try{uy=m.fx(x);}catch(e){uy=NaN;}tg.push({x,y:gy,m:t.given.sign*uy,col:c.acc,dash:[6,4]});}}
+      plot($('#cv-a'),{xr:r.dom,series:[{f:r.gx,col:c.ink2}],probe:x,pts:[{x,y:gy,col:c.ink}],tangents:tg,xl,yl:'given function',legend:st.hint>=2?[['true slope',c.ref],['your slope',c.acc]]:null});
+      $('#cap-a').innerHTML=`${t.given.lhs}, the given function.${st.hint>=2?' The lines show the true slope and the slope your expression implies at this point.':''}`;}
+    const cv=$('#cv-b');
+    if(!m.fx){plot(cv,{msg:m.f.err?'Fix the expression to see its graph':'Build your expression to see its graph'});$('#cap-b').textContent='';$('#readout').innerHTML='';return;}
+    const series=[{f:m.fx,col:c.acc}];if(st.hint>=2)series.push({f:r.fx,col:c.ref,dash:[6,4]});
+    let uy;try{uy=m.fx(x);}catch(e){uy=NaN;}
+    plot(cv,{xr:r.dom,series,gap:st.hint>=2?{s:[0,1],xr:r.dom}:null,probe:x,pts:[{x,y:uy,col:c.acc}],xl,yl:'your expression',legend:st.hint>=2?[['yours',c.acc],['correct',c.ref]]:null});
+    $('#cap-b').innerHTML=`Your ${t.ans.lhs} across the range of ${S(t.v)}.`;
+    $('#readout').innerHTML=`At ${S(t.v)} = <b>${fmt(x,4)}</b> ${uLab(xu)}, your expression gives <b>${fmt(uy,4)}</b>`;}}
+function update(){M=buildModel();renderPreview(M);drawScene(M);drawGraphs(M);if(state().hint>0)renderHints();}
+
+/* ---------- checking ---------- */
+function derCompare(m){const r=refOf(TPL[cur]);let scale=0;const pts=[];for(let i=0;i<=60;i++){const x=r.dom[0]+(r.dom[1]-r.dom[0])*i/60;const y=r.fx(x);scale=Math.max(scale,Math.abs(y));pts.push([x,y]);}
+  let worst=0,wx=null,bad=false;for(const [x,y] of pts){let u;try{u=m.fx(x);}catch(e){u=NaN;}if(!isFinite(u)){bad=true;wx=x;break;}const e=Math.abs(u-y)/(Math.abs(y)+1e-3*scale);if(e>worst){worst=e;wx=x;}}
+  return {worst,wx,bad};}
+function check(){const t=TPL[cur],st=state(),m=M,r=refOf(t);
+  if(m.errs.length){st.fb={k:'bad',h:`<p>Fix the expression first. ${m.errs[0][1]}</p>`};renderFeedback();return;}
+  if(t.kind==='int'){
+    if(!m.f.ast||!m.vOk||m.lo.empty||m.hi.empty){st.fb={k:'info',h:'<p>Fill in the integrand, both limits and the variable after <i class="mv">d</i>, then check.</p>'};renderFeedback();return;}
+    if(!isFinite(m.total)){st.fb={k:'bad',h:'<p>Your set-up doesn’t give a finite number yet.</p>'};renderFeedback();return;}
+    const rel=(m.total-r.ans)/Math.abs(r.ans),dimOk=!m.dimErr&&m.strip&&eqd(m.strip,t.ans.u)&&(!m.preD||eqd(m.preD,t.ans.u));
+    if(Math.abs(rel)<2e-3&&dimOk){win(t,`${t.ans.lhs} = ${fmt(r.ans,4)} ${uName(t.ans.u)}`);return;}
+    let msg=`<p>Not yet. Your set-up gives ${fmt(m.total,4)}, which is ${Math.abs(rel)<10?Math.round(Math.abs(rel)*100)+'%':fmt(Math.abs(rel)+1,3)+' times'} ${rel>0?'too high':'too low'}.</p>`;
+    if(Math.abs(rel)<2e-3)msg=`<p>The number matches, but the units don’t: it should be in ${uName(t.ans.u)}.</p>`;
+    else if(m.dimErr)msg+=`<p>There’s also a units problem: ${m.dimErr}.</p>`;
+    else if(m.strip&&!eqd(m.strip,t.ans.u))msg+=`<p>Its units also come out as ${uName(m.strip)} instead of ${uName(t.ans.u)}.</p>`;
+    st.fb={k:'bad',h:msg};renderFeedback();return;}
+  if(!m.fx){st.fb={k:'info',h:'<p>Build your expression first, then check.</p>'};renderFeedback();return;}
+  const cmp=derCompare(m),dimOk=!m.dimErr&&m.dim&&eqd(m.dim,t.ans.u);
+  if(!cmp.bad&&cmp.worst<2e-3&&dimOk){win(t,'It matches the true rate everywhere in the range.');return;}
+  let msg;if(cmp.bad)msg=`<p>Not yet. Your expression has no finite value at ${S(t.v)} = ${fmt(cmp.wx,3)}.</p>`;
+  else if(cmp.worst<2e-3)msg=`<p>The values match, but the units should be ${uName(t.ans.u)}.</p>`;
+  else msg=`<p>Not yet. Your expression is off by up to ${cmp.worst<10?Math.round(cmp.worst*100)+'%':'a factor of '+fmt(cmp.worst+1,2)} across the range of ${S(t.v)}.</p>`;
+  if(!cmp.bad&&cmp.worst>=2e-3){if(m.dimErr)msg+=`<p>There’s also a units problem: ${m.dimErr}.</p>`;else if(m.dim&&!eqd(m.dim,t.ans.u))msg+=`<p>Its units also come out as ${uName(m.dim)} instead of ${uName(t.ans.u)}.</p>`;}
+  st.fb={k:'bad',h:msg};renderFeedback();}
+function win(t,line){const st=state();solved.add(t.id);saveSolved();renderList();
+  st.fb={k:'good',h:`<p><b>Correct.</b> ${line}</p><p>Try new numbers to see that your set-up works for any values, or move on.</p><div class="row"><button class="btn" type="button" data-act="new">New numbers</button><button class="btn primary" type="button" data-act="next">Next problem</button></div>`};
+  renderFeedback();}
+function renderFeedback(){const st=state(),el=$('#fb');if(!st.fb){el.innerHTML='';return;}
+  el.innerHTML=`<div class="fb ${st.fb.k}" role="status">${st.fb.h}</div>`;
+  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>b.dataset.act==='new'?newNumbers():loadProblem((cur+1)%TPL.length));}
+
+/* ---------- hints ---------- */
+function renderHints(){const t=TPL[cur],st=state(),m=M,r=refOf(t),out=[];
+  $('#b-hint').textContent=st.hint>=3?'All hints shown':`Get a hint (${st.hint+1} of 3)`;$('#b-hint').disabled=st.hint>=3;
+  $('#b-sol').hidden=st.hint<3;
+  if(st.hint>=1){let h;
+    if(t.kind==='int'){
+      if(!m||!m.f.ast||!m.vOk)h=`Once your integrand and variable are in place, this hint checks units. ${t.ans.lhs} must come out in <b>${uName(t.ans.u)}</b>.`;
+      else if(m.dimErr)h=`Inside your set-up ${m.dimErr}. Every term you add must have the same units.`;
+      else{const ok=eqd(m.strip,t.ans.u);h=`Your strip, integrand × <i class="mv">d</i>${S(m.v)}, comes out in <b>${uName(m.strip)}</b>. ${t.ans.lhs} must be in <b>${uName(t.ans.u)}</b>. `+
+        (ok?'They match, so if your result is still off, look at the shape of your integrand or at your limits.':'They don’t match, so a factor is missing, extra, or in the wrong place.');
+        const vd=t.vars.find(v=>v[0]===m.v)[1];
+        [['lower',m.loD],['upper',m.hiD]].forEach(([nm,d])=>{if(d&&!(d.c===0)&&!eqd(d.d,vd))h+=` Your ${nm} limit is in ${uName(d.d)}, but ${S(m.v)} is in ${uName(vd)}.`;});
+        if(m.preD&&!eqd(m.preD,t.ans.u))h+=` Your outside term is in ${uName(m.preD)}.`;}}
+    else{if(!m||!m.f.ast)h=`Once you’ve built an expression, this hint checks units. ${t.ans.lhs} must come out in <b>${uName(t.ans.u)}</b>.`;
+      else if(m.dimErr)h=`Inside your expression ${m.dimErr}. Every term you add must have the same units.`;
+      else{const ok=eqd(m.dim,t.ans.u);h=`Your expression comes out in <b>${uName(m.dim)}</b>. ${t.ans.lhs} must be in <b>${uName(t.ans.u)}</b>. `+(ok?'They match, so look at the shape of your expression next.':'They don’t match, so something is missing, extra, or in the wrong place.');}}
+    out.push(['Hint 1 · Units',h]);}
+  if(st.hint>=2){let h;
+    if(t.kind==='int'){
+      if(!m||!m.fx)h=`The amber curve shows a correct integrand when you slice along ${S(r.v)}. Build your integrand and limits to compare.`;
+      else if(m.v!==r.v)h=`You slice along ${S(m.v)}. The reference slices along ${S(r.v)}, so the two curves can’t be laid on top of each other. Try slicing along ${S(r.v)} to compare, or rely on the units hint.`;
+      else{const a=Math.min(r.lo,r.hi),b=Math.max(r.lo,r.hi);let worst=0,wx=null,sgn=0,scale=0;
+        for(let i=0;i<=80;i++){const x=a+(b-a)*i/80;scale=Math.max(scale,Math.abs(r.fx(x)));}
+        for(let i=0;i<=80;i++){const x=a+(b-a)*i/80;let u;try{u=m.fx(x);}catch(e){u=NaN;}const d=u-r.fx(x);if(isFinite(d)&&Math.abs(d)>worst){worst=Math.abs(d);wx=x;sgn=Math.sign(d);}}
+        const vu=uLab(t.vars.find(v=>v[0]===r.v)[1]);
+        h=`The dashed amber curve is a correct integrand for slicing along ${S(r.v)}, drawn over the range it should cover. The shaded band is the gap between yours and it.`+
+          (worst<1e-3*scale?' Your integrand matches it. Compare the ranges: your limits are the problem.':` The biggest gap is near ${S(r.v)} = ${fmt(wx,3)} ${vu}, where yours is ${sgn>0?'higher':'lower'}.`);}}
+    else h=`The dashed amber curve is the correct ${t.ans.lhs}, with the gap to yours shaded.${t.given?' On the given function, compare the true slope line with the one your expression implies.':''} Move the slider to see where they part.`;
+    out.push(['Hint 2 · Shape',h]);}
+  if(st.hint>=3)out.push(['Hint 3 · Set-up',t.hint]);
+  let html=out.map(([l,h])=>`<div class="hint"><div class="hl">${l}</div><p>${h}</p></div>`).join('');
+  if(st.showSol){const K=knownOf(t),s=t.sol;let body;
+    if(t.kind==='int')body=`${t.ans.lhs} = ${s.pre?pp(parse(s.pre,K),1)+' + ':''}<span class="isig">∫</span><span class="ilim"><span>${pp(parse(s.hi,K))}</span><span>${pp(parse(s.lo,K))}</span></span>${pp(parse(s.f,K),1.5)} <i class="mv">d</i>${S(s.v)}`;
+    else body=`${t.ans.lhs} = ${pp(parse(s.f,K))}`;
+    html+=`<div class="sol"><div class="hl" style="font-family:var(--f-display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">One correct set-up</div><div class="preview">${body}</div><p style="margin:0;font-size:14px;color:var(--ink-2)">Other set-ups can be right too, as long as they add up the same thing.</p><div><button class="btn" type="button" id="b-use">Put it in the builder</button></div></div>`;}
+  $('#hints').innerHTML=html;
+  const bu=$('#b-use');if(bu)bu.onclick=useSolution;}
+function useSolution(){const t=TPL[cur],st=state(),s=t.sol;st.f=s.f;if(t.kind==='int'){st.v=s.v;st.lo=s.lo;st.hi=s.hi;if(s.pre){st.showPre=true;st.pre=s.pre;}}renderProblem();update();}
+function newNumbers(){const st=state();st.seed=1+Math.floor(Math.random()*1e9);st.fb=null;P=mkParams(TPL[cur],st.seed);renderProblem();update();}
+
+/* ---------- wiring ---------- */
+$('#b-check').onclick=check;
+$('#b-hint').onclick=()=>{const st=state();if(st.hint<3)st.hint++;renderHints();update();};
+$('#b-sol').onclick=()=>{state().showSol=true;renderHints();};
+$('#b-new').onclick=newNumbers;
+$('#b-pre').onclick=()=>{const st=state();st.showPre=!st.showPre;if(!st.showPre)st.pre='';renderProblem();update();};
+$('#sl-p').addEventListener('input',e=>{probe=e.target.value/1000;schedule();});
+$('#sl-n').addEventListener('input',e=>{nStrips=+e.target.value;$('#sl-n-o').textContent=nStrips;schedule();});
+new ResizeObserver(()=>schedule()).observe($('#viz'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>schedule());
+new MutationObserver(()=>schedule()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>schedule());
+
+/* opens on the tank problem with an example attempt, so the bench shows what it does */
+cur=TPL.findIndex(t=>t.id==='pump');
+Object.assign(state(),{f:'ρ g π R^2 y',v:'y',lo:'0',hi:'H'});
+P=mkParams(TPL[cur],state().seed);renderProblem();update();
+$('#fb').innerHTML='<div class="fb info" role="status"><p>This is an example attempt, and it has a mistake. Edit it, or press Check to see how far off it is.</p></div>';
+</script>
+</body>
+</html>
