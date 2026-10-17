@@ -9,12 +9,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;1,400&display=swap">
 <style>
-/* layout: problem rail on the left, a bench of stacked panels on graph paper to the right */
+/* layout: one focused stage at a time on graph paper; levels, givens and hints slide in from the sides */
 :root{
   --paper:#EEF2F6; --panel:#FFFFFF; --ink:#152231; --ink-2:#465668; --ink-3:#77869A;
   --grid:#DDE5EE; --rule:#CCD6E2; --accent:#1F5BD0; --accent-soft:#E3ECFC;
   --ref:#B26A04; --ref-soft:#FBEFD9; --good:#17734A; --good-soft:#E1F2E8; --bad:#B23A2C; --bad-soft:#FBE8E5;
-  --chip:#E7EDF6; --chip-ink:#1A3561; --field:#FFFFFF; --water:#8DBBE8; --metal:#A7B1BE; --hot:#E2762F;
+  --chip:#E7EDF6; --chip-ink:#1A3561; --field:#FFFFFF; --water:#8DBBE8; --metal:#A7B1BE; --hot:#E2762F; --olive:#5F6E3A;
+  --scrim:rgba(14,24,36,.38);
   --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -24,187 +25,263 @@
   --paper:#0D151F; --panel:#142130; --ink:#E2E9F1; --ink-2:#A6B4C4; --ink-3:#74849B;
   --grid:#172433; --rule:#283849; --accent:#6EA4FF; --accent-soft:#1B2E4D;
   --ref:#F2B245; --ref-soft:#3A2C12; --good:#4DC48A; --good-soft:#123323; --bad:#FF7E6E; --bad-soft:#3E1C18;
-  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; color-scheme:dark}}
+  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; --olive:#93A365;
+  --scrim:rgba(0,0,0,.55); color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0D151F; --panel:#142130; --ink:#E2E9F1; --ink-2:#A6B4C4; --ink-3:#74849B;
   --grid:#172433; --rule:#283849; --accent:#6EA4FF; --accent-soft:#1B2E4D;
   --ref:#F2B245; --ref-soft:#3A2C12; --good:#4DC48A; --good-soft:#123323; --bad:#FF7E6E; --bad-soft:#3E1C18;
-  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; color-scheme:dark}
+  --chip:#1D2D43; --chip-ink:#CFE0FF; --field:#0F1A27; --water:#2B5C8F; --metal:#5C6A7B; --hot:#FF9A4D; --olive:#93A365;
+  --scrim:rgba(0,0,0,.55); color-scheme:dark}
 *{box-sizing:border-box}
 body{background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
   background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
-.wrap{max-width:1240px;margin:0 auto}
-header.top{padding-block:22px 18px;display:flex;align-items:center;gap:14px}
-.logo{font-family:var(--f-math);font-size:44px;line-height:1;color:var(--accent);width:52px;height:52px;display:grid;place-items:center;border:1.5px solid var(--accent);border-radius:10px;background:var(--panel)}
-h1{font-family:var(--f-display);font-weight:600;font-size:34px;letter-spacing:.01em;margin:0;line-height:1}
-header p{margin:4px 0 0;color:var(--ink-2);font-size:14px}
-.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:20px;align-items:start}
-@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
-aside{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px 12px;position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
-@media (max-width:900px){aside{position:static}}
-.tier{margin:0 0 12px}
-.tier:last-child{margin:0}
-.tier h4{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px 6px}
-.plist{display:grid;gap:2px}
-@media (max-width:900px){.plist{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
-.pbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:14px;color:var(--ink);width:100%}
-.pbtn:hover{background:var(--chip)}
-.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.pbtn[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:500}
-.pbtn .k{font-family:var(--f-math);font-style:italic;width:16px;text-align:center;color:var(--ink-3);flex:none}
-.pbtn .ok{margin-left:auto;color:var(--good);font-size:13px;flex:none}
-main{display:grid;gap:16px;min-width:0}
-.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:18px 20px;min-width:0}
-@media (max-width:520px){.card{padding:14px 14px}}
-.phead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-.tags{display:flex;gap:6px;margin-bottom:6px}
+.app{max-width:1160px;margin:0 auto}
+button{font:inherit}
+.bar{display:flex;align-items:center;gap:14px;padding-block:16px 12px;flex-wrap:wrap}
+.brand{font-family:var(--f-math);font-size:30px;color:var(--accent);width:42px;height:42px;display:grid;place-items:center;border:1.5px solid var(--accent);border-radius:9px;background:var(--panel);flex:none}
+.where{flex:1 1 220px;min-width:0}
+.where h1{font-family:var(--f-display);font-weight:600;font-size:28px;margin:2px 0 0;line-height:1.1;text-wrap:balance}
+.tags{display:flex;gap:6px}
 .tag{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--chip-ink)}
 .tag.int{background:var(--accent-soft);color:var(--accent)}
 .tag.der{background:var(--ref-soft);color:var(--ref)}
-h2{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1.1;margin:0;text-wrap:balance}
-h3{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
-.ptext{max-width:68ch;margin:10px 0 16px;font-size:16px}
-.mv{font-family:var(--f-math);font-style:italic;font-size:1.08em}
-.mn{font-family:var(--f-math);font-size:1.08em}
-sub{font-size:.72em}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-table.kv{border-collapse:collapse;width:100%;font-size:14px}
-table.kv td{padding:5px 8px 5px 0;border-top:1px solid var(--rule);vertical-align:top}
-table.kv tr:first-child td{border-top:0}
-table.kv td.s{width:56px;white-space:nowrap}
-table.kv td.v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13px}
-table.kv td.d{color:var(--ink-2)}
-ul.phys{margin:0 0 14px;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
-ul.phys li{padding-left:14px;position:relative}
-ul.phys li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink-3)}
-button{font:inherit}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
 .btn{cursor:pointer;border:1px solid var(--rule);background:var(--panel);color:var(--ink);padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500}
 .btn:hover{border-color:var(--ink-3)}
 .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 .btn.primary:hover{filter:brightness(1.08)}
-.btn.link{border:0;padding:4px 0;background:none;color:var(--accent);font-weight:500}
-.palette{display:grid;gap:10px;margin-bottom:6px}
+.btn.link{border:0;padding:4px 0;background:none;color:var(--accent);justify-self:start}
+.steps{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.stp{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 14px 6px 7px;border-radius:999px;background:var(--panel);border:1px solid var(--rule);font-size:14px;color:var(--ink-2)}
+.stp .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--chip);color:var(--chip-ink);font-size:12px;font-weight:600}
+.stp[aria-current="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+.stp[aria-current="true"] .n{background:var(--accent);color:var(--panel)}
+.stp:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:20px 22px;display:grid;gap:16px;min-width:0}
+@media (max-width:520px){.panel{padding:14px}}
+.qtext{font-size:17px;max-width:66ch;margin:0;line-height:1.6}
+.mv{font-family:var(--f-math);font-style:italic;font-size:1.08em}
+.mn{font-family:var(--f-math);font-size:1.08em}
+sub{font-size:.72em}
+.skey{font-family:var(--f-mono);font-size:.84em;font-style:normal;background:var(--chip);color:var(--chip-ink);padding:1px 6px;border-radius:5px}
+.guide{display:grid;gap:7px;padding:12px 16px;background:var(--accent-soft);border-radius:9px;font-size:14.5px;max-width:84ch}
+.guide>div{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:baseline}
+.guide .gk{font-family:var(--f-display);font-weight:600;letter-spacing:.07em;text-transform:uppercase;font-size:13px;color:var(--accent)}
+@media (max-width:520px){.guide>div{grid-template-columns:minmax(0,1fr);gap:0}}
+canvas{display:block;width:100%;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+canvas.scene{height:300px}
+canvas.drag{touch-action:none;cursor:ns-resize}
+canvas:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;align-items:start}
+.two>*{min-width:0}
+.cap{font-size:13.5px;color:var(--ink-2);margin:8px 0 0}
+.sl{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2);margin-top:10px}
+.sl input{flex:1;accent-color:var(--accent);min-width:0}
+.sl output{font-family:var(--f-mono);font-size:13px;min-width:24px;text-align:right;color:var(--ink)}
+.controls{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center}
+.controls .sl{margin:0;flex:1 1 220px}
+.nav{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--rule);padding-top:14px}
+.build{display:grid;gap:12px;align-content:start}
+.palette{display:grid;gap:8px}
 .pgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.pgroup .gl{font-size:12px;color:var(--ink-3);width:92px;flex:none}
+.pgroup .gl{font-size:12px;color:var(--ink-3);width:84px;flex:none}
 @media (max-width:520px){.pgroup .gl{width:100%}}
 .chip{cursor:grab;border:1px solid transparent;background:var(--chip);color:var(--chip-ink);border-radius:7px;padding:4px 10px;min-width:36px;font-size:15px;line-height:1.3;user-select:none}
 .chip:hover{border-color:var(--accent)}
-.chip:active{cursor:grabbing}
 .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .chip.var{background:var(--accent-soft);color:var(--accent)}
 .chip.fn{font-family:var(--f-math)}
-.help{font-size:13px;color:var(--ink-2);margin:8px 0 16px;max-width:75ch}
-.help code{font-family:var(--f-mono);font-size:12.5px;background:var(--chip);padding:1px 5px;border-radius:4px}
-.eqrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px;border:1px dashed var(--rule);border-radius:10px;background:var(--paper)}
-.lhs{font-family:var(--f-math);font-size:22px;white-space:nowrap}
-.intsign{font-family:var(--f-math);font-size:52px;line-height:.9;margin:0 -2px 0 2px}
-.lims{display:flex;flex-direction:column;gap:6px}
-input.fx,input.lim,input.var{font-family:var(--f-mono);font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:7px;padding:7px 9px;min-width:0}
+.chip.key{font-family:var(--f-mono);font-size:13.5px}
+.help{font-size:13.5px;color:var(--ink-2);margin:0;max-width:72ch}
+.srow{display:grid;gap:4px}
+.srow label{font-size:14px;color:var(--ink-2)}
+.srow.fin{padding:12px;border:1px dashed var(--accent);border-radius:10px;background:var(--paper)}
+.srow.fin label{color:var(--ink)}
+.sin{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input.fx,input.lim{font-family:var(--f-mono);font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:7px;padding:7px 9px;min-width:0}
+input.fx{flex:1 1 220px}
+input.lim{width:120px;font-size:14px}
+input.pre{flex:0 1 140px}
 input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
-input.lim{width:110px;font-size:13.5px;padding:5px 8px}
-input.var{width:52px;text-align:center}
-input.fx.grow{flex:1 1 260px}
-input.fx.pre{width:150px}
-.dee{font-family:var(--f-math);font-size:22px;font-style:italic}
-.plus{font-family:var(--f-math);font-size:22px}
-.preview{margin-top:12px;min-height:48px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-math);font-size:21px;overflow-x:auto}
-.preview .pl{font-family:var(--f-body);font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
-.slot{display:inline-block;min-width:18px;height:22px;border:1.5px dashed var(--ink-3);border-radius:4px;vertical-align:middle}
-.slot.bad{border-color:var(--bad)}
+.sval{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);white-space:nowrap}
+.preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-math);font-size:20px;overflow-x:auto;min-height:30px}
+.preview .pl,.mathline .pl{font-family:var(--f-body);font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
 .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.92em}
 .frac>span:first-child{padding:0 3px 1px}
 .frac>span:last-child{border-top:1.2px solid currentColor;padding:1px 3px 0}
 .sq{border-top:1.2px solid currentColor;padding-left:1px}
 .ilim{display:inline-flex;flex-direction:column;vertical-align:middle;font-size:.6em;line-height:1.15;margin-right:3px}
 .isig{font-size:1.5em;vertical-align:middle}
-.perr{font-size:13.5px;color:var(--bad);margin-top:6px;display:grid;gap:2px}
-.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-.vgrid figure{margin:0;min-width:0}
-.vgrid figure.wide{grid-column:1/-1}
-canvas{display:block;width:100%;height:260px;border:1px solid var(--rule);border-radius:9px;background:var(--panel)}
-figcaption{font-size:13px;color:var(--ink-2);margin-top:6px;min-height:2.6em}
-.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px;margin-top:12px}
-.sl{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
-.sl input{flex:1;accent-color:var(--accent);min-width:0}
-.sl output{font-family:var(--f-mono);font-size:13px;min-width:28px;text-align:right;color:var(--ink)}
-.readout{margin-top:10px;font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.slot{display:inline-block;min-width:18px;height:20px;border:1.5px dashed var(--ink-3);border-radius:4px;vertical-align:middle}
+.perr{font-size:13.5px;color:var(--bad);display:grid;gap:2px}
+.perr:empty{display:none}
+.note{background:var(--ref-soft);border-left:3px solid var(--ref);padding:10px 14px;font-size:14.5px}
+.sentence{font-size:17px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:0;line-height:1.5}
+.pill{background:var(--accent-soft);color:var(--accent);padding:2px 10px;border-radius:999px;font-weight:500}
+.mathline{margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--f-math);font-size:18px;color:var(--ink-2);overflow-x:auto}
+.readout{margin:0;font-size:14.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .readout b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.setup{margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--f-math);font-size:19px;overflow-x:auto}
+.setup .pl{font-family:var(--f-body);font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.fb{margin-top:14px;padding:12px 14px;border-radius:9px;font-size:15px;display:grid;gap:8px}
-.fb.good{background:var(--good-soft);color:var(--good)}
-.fb.bad{background:var(--bad-soft);color:var(--bad)}
-.fb.info{background:var(--chip);color:var(--chip-ink)}
+.fb{padding:12px 16px;border-radius:9px;font-size:15px;display:grid;gap:8px}
+.fb.good{background:var(--good-soft)}
+.fb.bad{background:var(--bad-soft)}
+.fb.info{background:var(--chip)}
+.fb p{margin:0}
+.fb .head{font-weight:600}
+.fb.good .head{color:var(--good)}
+.fb.bad .head{color:var(--bad)}
+.fb ul{margin:0;padding-left:18px;display:grid;gap:6px}
 .fb .row{display:flex;gap:8px;flex-wrap:wrap}
-.fb p{margin:0;color:var(--ink)}
-.hints{margin-top:14px;display:grid;gap:10px}
-.hint{border-left:3px solid var(--ref);background:var(--ref-soft);padding:10px 14px;border-radius:0;font-size:14.5px}
-.hint .hl{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ref);margin-bottom:2px}
-.hint p{margin:0}
+.hint{border-left:3px solid var(--ref);background:var(--ref-soft);padding:10px 14px;font-size:14.5px}
+.hint .hl{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ref)}
+.hint p{margin:2px 0 0}
 .sol{border:1px solid var(--rule);border-radius:9px;padding:12px 14px;display:grid;gap:10px}
-.sol .preview{margin:0}
+h3{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0}
+table.kv{border-collapse:collapse;width:100%;font-size:14px}
+table.kv td{padding:6px 8px 6px 0;border-top:1px solid var(--rule);vertical-align:top}
+table.kv tr:first-child td{border-top:0}
+table.kv td.s{width:48px;white-space:nowrap}
+table.kv td.v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13px}
+table.kv td.d{color:var(--ink-2)}
+ul.phys{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
+ul.phys li{padding-left:14px;position:relative}
+ul.phys li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink-3)}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40}
+.drawer{position:fixed;top:0;bottom:0;width:min(430px,92vw);background:var(--panel);z-index:50;overflow-y:auto;display:grid;gap:16px;align-content:start;
+  padding:calc(18px + env(safe-area-inset-top,0px)) 20px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 0 0 1px var(--rule),0 12px 40px rgba(0,0,0,.2);
+  visibility:hidden;transition:transform .22s ease,visibility 0s linear .22s}
+.drawer.right{right:0;transform:translateX(105%);padding-right:max(20px,env(safe-area-inset-right,0px))}
+.drawer.left{left:0;transform:translateX(-105%);padding-left:max(20px,env(safe-area-inset-left,0px))}
+.drawer.open{transform:none;visibility:visible;transition:transform .22s ease}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dh h2{font-family:var(--f-display);font-weight:600;font-size:24px;margin:0}
+.dbody{display:grid;gap:14px}
+.tier h4{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px 6px}
+.plist{display:grid;gap:2px}
+.pbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:14.5px;color:var(--ink);width:100%}
+.pbtn:hover{background:var(--chip)}
+.pbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pbtn[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.pbtn .k{font-family:var(--f-math);font-style:italic;width:16px;text-align:center;color:var(--ink-3);flex:none}
+.pbtn .ok{margin-left:auto;color:var(--good);font-size:13px;flex:none}
+.chal{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.chal li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--rule);border-radius:9px;font-size:14.5px}
+.chal li .mk{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink-3);flex:none;display:grid;place-items:center;font-size:13px;color:var(--panel)}
+.chal li.now{border-color:var(--good);background:var(--good-soft)}
+.chal li.now .mk{background:var(--good);border-color:var(--good)}
+.chal li .was{margin-left:auto;font-size:12px;color:var(--good);white-space:nowrap}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="top">
-    <div class="logo" aria-hidden="true">∫</div>
-    <div><h1>Slice &amp; Sum</h1><p>Build integrals and derivatives straight from the physics, and see what you built.</p></div>
+<div class="app">
+  <header class="bar">
+    <div class="brand" aria-hidden="true">∫</div>
+    <button class="btn" id="b-levels" type="button" aria-controls="d-levels">Levels</button>
+    <div class="where"><div class="tags"><span class="tag" id="h-tier"></span><span class="tag" id="h-kind"></span></div><h1 id="h-title"></h1></div>
+    <div class="tools" id="tools"><button class="btn" id="b-given" type="button" aria-controls="d-given">Given and physics</button><button class="btn" id="b-hints" type="button" aria-controls="d-hints">Hints</button></div>
   </header>
-  <div class="layout">
-    <aside id="list" aria-label="Problems"></aside>
-    <main>
-      <section class="card" id="prob">
-        <div class="phead">
-          <div><div class="tags"><span class="tag" id="p-tier"></span><span class="tag" id="p-kind"></span></div><h2 id="p-title"></h2></div>
-          <button class="btn" id="b-new" type="button">New numbers</button>
-        </div>
-        <p class="ptext" id="p-text"></p>
-        <div class="cols">
-          <div><h3>Given</h3><table class="kv" id="p-given"></table></div>
-          <div><h3>Physics you can use</h3><ul class="phys" id="p-phys"></ul><h3 id="p-vars-h">Coordinates</h3><table class="kv" id="p-vars"></table></div>
-        </div>
+
+  <div id="prob-ui">
+    <nav class="steps" id="steps" aria-label="Steps"></nav>
+    <main id="stage">
+      <section class="panel" data-step="read">
+        <p class="qtext" id="r-text"></p>
+        <div class="guide" id="r-guide"></div>
+        <canvas id="cv-read" class="scene" aria-label="Picture of the problem"></canvas>
+        <div class="nav"><span></span><button class="btn primary" type="button" data-go="slice" id="nx-read">Next</button></div>
       </section>
 
-      <section class="card" id="build">
-        <h3>Blocks</h3>
-        <div class="palette" id="palette"></div>
-        <p class="help" id="help"></p>
-        <div class="eqrow" id="eq"></div>
-        <button class="btn link" id="b-pre" type="button">+ Add a term outside the integral</button>
-        <div class="preview" id="preview"></div>
-        <div class="perr" id="perr"></div>
+      <section class="panel" data-step="slice" hidden>
+        <div class="two">
+          <div>
+            <canvas id="cv-slice" class="scene" aria-label="The slice you are building"></canvas>
+            <p class="cap" id="cap-slice"></p>
+            <label class="sl"><span id="lb-probe">Move the slice</span><input type="range" id="sl-probe" min="0" max="1000" step="1" value="500"></label>
+            <label class="sl" id="w-n1"><span>Number of pieces</span><input type="range" id="sl-n1" min="1" max="60" step="1" value="12"><output id="o-n1">12</output></label>
+          </div>
+          <div class="build">
+            <div class="palette" id="pal-slice"></div>
+            <div id="card" class="build"></div>
+            <div class="preview" id="pv-slice"></div>
+            <div class="perr" id="er-slice"></div>
+            <div class="note" id="note-slice" hidden></div>
+          </div>
+        </div>
+        <div class="nav"><button class="btn" type="button" data-go="read">Back</button><button class="btn primary" type="button" data-go="sum" id="nx-slice">Next</button></div>
       </section>
 
-      <section class="card" id="viz">
-        <div class="vgrid">
-          <figure id="fig-s"><canvas id="cv-s" aria-label="Physical picture of the problem"></canvas><figcaption id="cap-s"></figcaption></figure>
-          <figure id="fig-a"><canvas id="cv-a" aria-label="Graph"></canvas><figcaption id="cap-a"></figcaption></figure>
-          <figure id="fig-b" class="wide"><canvas id="cv-b" aria-label="Graph of your expression"></canvas><figcaption id="cap-b"></figcaption></figure>
+      <section class="panel" data-step="sum" hidden>
+        <div id="sum-int" class="build">
+          <p class="sentence" id="sentence"></p>
+          <button class="btn link" id="b-pre" type="button"></button>
+          <div class="palette" id="pal-sum"></div>
+          <p class="mathline" id="mathline"></p>
+          <div class="perr" id="er-sum"></div>
         </div>
-        <div class="sliders">
-          <label class="sl"><span id="sl-p-l">Move the slice</span><input type="range" id="sl-p" min="0" max="1000" step="1" value="500"></label>
-          <label class="sl" id="sl-n-w"><span>Strips</span><input type="range" id="sl-n" min="1" max="60" step="1" value="12"><output id="sl-n-o">12</output></label>
+        <div class="two">
+          <canvas id="cv-sum" class="scene" aria-label="The physical picture"></canvas>
+          <canvas id="cv-pile" class="scene" aria-label="Your total, piece by piece"></canvas>
         </div>
-        <div class="readout" id="readout"></div>
+        <div class="controls">
+          <button class="btn primary" id="b-play" type="button">Play</button>
+          <label class="sl" id="w-n2"><span>Number of pieces</span><input type="range" id="sl-n2" min="1" max="60" step="1" value="12"><output id="o-n2">12</output></label>
+          <label class="sl" id="w-p2"><span id="lb-probe2">Move along</span><input type="range" id="sl-probe2" min="0" max="1000" step="1" value="500"></label>
+        </div>
+        <p class="readout" id="readout"></p>
+        <button class="btn link" id="b-math" type="button">Show the maths view</button>
+        <div id="math-w" class="build" hidden>
+          <div><canvas id="cv-m1" class="scene"></canvas><p class="cap" id="cap-m1"></p></div>
+          <div id="m2-w"><canvas id="cv-m2" class="scene"></canvas><p class="cap" id="cap-m2"></p></div>
+        </div>
+        <div class="nav"><button class="btn" type="button" data-go="slice">Back</button><button class="btn primary" type="button" data-go="check">Next: check</button></div>
       </section>
 
-      <section class="card" id="act">
+      <section class="panel" data-step="check" hidden>
+        <p class="setup" id="chk-setup"></p>
+        <div class="two">
+          <canvas id="cv-cs" class="scene" aria-label="The physical picture with your answer"></canvas>
+          <canvas id="cv-cg" class="scene" aria-label="Your total compared with the real one"></canvas>
+        </div>
         <div class="actions">
-          <button class="btn primary" id="b-check" type="button">Check</button>
-          <button class="btn" id="b-hint" type="button">Get a hint (1 of 3)</button>
-          <button class="btn" id="b-sol" type="button" hidden>Show a solution</button>
+          <button class="btn primary" id="b-check" type="button">Check my answer</button>
+          <button class="btn" id="b-play3" type="button">Play</button>
+          <button class="btn" id="b-hint-c" type="button">I’d like a hint</button>
         </div>
         <div id="fb"></div>
-        <div class="hints" id="hints"></div>
+        <div class="nav"><button class="btn" type="button" data-go="sum">Back</button><span></span></div>
       </section>
     </main>
   </div>
+
+  <main id="sandbox" class="panel" hidden>
+    <p class="qtext" id="sb-intro"></p>
+    <div class="two">
+      <canvas id="sb-graph" class="scene drag" tabindex="0" aria-label="A graph you can shape. Drag the dots, or use the arrow keys."></canvas>
+      <canvas id="sb-scene" class="scene" aria-label="What your graph does"></canvas>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="sb-play" type="button">Play</button>
+      <label class="sl"><span id="sb-t-l">Time</span><input type="range" id="sb-t" min="0" max="1000" step="1" value="1000"></label>
+      <button class="btn" id="sb-reset" type="button">Reset the shape</button>
+    </div>
+    <p class="readout" id="sb-read"></p>
+    <h3>Try this</h3>
+    <ul class="chal" id="sb-ch"></ul>
+  </main>
 </div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer left" id="d-levels" aria-label="Levels" inert><div class="dh"><h2>Levels</h2><button class="btn" type="button" data-close>Close</button></div><div class="dbody" id="levels"></div></aside>
+<aside class="drawer right" id="d-given" aria-label="Given and physics" inert><div class="dh"><h2>Given and physics</h2><button class="btn" type="button" data-close>Close</button></div><div class="dbody" id="given-body"></div></aside>
+<aside class="drawer right" id="d-hints" aria-label="Hints" inert><div class="dh"><h2>Hints</h2><button class="btn" type="button" data-close>Close</button></div><div class="dbody" id="hints-body"></div></aside>
 
 <script id="core">
 /* ---------- units ---------- */
@@ -212,7 +289,7 @@ const U={none:[0,0,0],m:[1,0,0],kg:[0,1,0],s:[0,0,1],J:[2,1,-2],N:[1,1,-2],W:[2,
   kgpm:[-1,1,0],rho:[-3,1,0],Pa:[-1,1,-2],m3ps:[3,0,-1],kgps:[0,1,-1],Npm:[0,1,-2],Npm3:[-2,1,-2],G:[3,-1,-2],ps:[0,0,-1],kgm2:[2,1,0]};
 const UN=[[U.none,'no units'],[U.m,'m'],[U.kg,'kg'],[U.s,'s'],[U.J,'J'],[U.N,'N'],[U.W,'W'],[U.mps,'m/s'],[U.mps2,'m/s²'],[U.mps3,'m/s³'],
   [U.kgpm,'kg/m'],[U.rho,'kg/m³'],[U.Pa,'Pa'],[U.m3ps,'m³/s'],[U.kgps,'kg/s'],[U.Npm,'N/m'],[U.Npm3,'N/m³'],[U.G,'N·m²/kg²'],[U.ps,'rad/s'],[U.kgm2,'kg·m²'],
-  [[2,0,0],'m²'],[[3,0,0],'m³'],[[0,0,-2],'1/s²'],[[-1,0,0],'1/m'],[[2,1,-1],'J·s'],[[1,1,-1],'kg·m/s'],[[-2,1,0],'kg/m²'],[[1,1,0],'kg·m'],[[3,1,-2],'J·m'],[[1,0,1],'m·s'],[[2,0,-1],'m²/s'],[[2,0,-2],'m²/s²'],[[0,1,-2],'N/m']];
+  [[2,0,0],'m²'],[[3,0,0],'m³'],[[0,0,-2],'1/s²'],[[-1,0,0],'1/m'],[[2,1,-1],'J·s'],[[1,1,-1],'kg·m/s'],[[-2,1,0],'kg/m²'],[[1,1,0],'kg·m'],[[3,1,-2],'J·m'],[[1,0,1],'m·s'],[[2,0,-1],'m²/s'],[[2,0,-2],'m²/s²'],[[0,1,-2],'N/m'],[[-1,1,-3],'Pa/s'],[[1,1,0],'kg·m']];
 const eqd=(a,b)=>a.every((v,i)=>Math.abs(v-b[i])<1e-9);
 const addd=(a,b)=>a.map((v,i)=>v+b[i]), subd=(a,b)=>a.map((v,i)=>v-b[i]), zerod=a=>a.every(v=>Math.abs(v)<1e-9);
 const SUP='⁻⁰¹²³⁴⁵⁶⁷⁸⁹';
@@ -349,148 +426,288 @@ function mkR(seed){const rnd=mulberry(seed);return (a,b,st)=>{const k=Math.round
 
 /* ---------- problems ---------- */
 const g0=9.81;
+const P6=x=>+x.toPrecision(6);
+const dx_=`<i class="mv">dx</i>`,dt_=`<i class="mv">dt</i>`,ds_=`<i class="mv">ds</i>`,dy_=`<i class="mv">dy</i>`,dr_=`<i class="mv">dr</i>`;
 const TPL=[
+/* ================= Warm-up ================= */
+{id:'drive',tier:'Warm-up',kind:'int',title:'Steady drive',scene:'mover',icon:'car',
+ params:r=>({v:r(10,30,1),T:r(20,120,10)}),
+ sym:[['v',U.mps,'speed of the car (it never changes)'],['T',U.s,'how long it drives']],
+ vars:[['t',U.s,'time since the car set off']],
+ text:`A car drives along a straight road at a steady speed ${S('v')} for a time ${S('T')}. How far does it go? You could just multiply, but build it as an integral anyway. It shows why the area under a speed graph is a distance.`,
+ phys:[`Distance covered in a short time: ${dx_} = ${S('v')}·${dt_}`],
+ ans:{lhs:S('d'),name:'distance',rate:'Distance per second (the speed)',u:U.m,f:P=>P.v*P.T},
+ sol:{f:'v',v:'t',lo:'0',hi:'T'},
+ guide:[['Graph tip','The height of the line is the speed. The speed never changes, so the line is flat and the area under it is a rectangle: speed × time.']],
+ pos:(P,t)=>P.v*t,posEnd:P=>P.v*P.T,
+ hint:`In each short moment ${dt_} the car moves ${S('v')}·${dt_}. The integral adds these up from the start (${S('t')} = 0) to the end (${S('t')} = ${S('T')}). The integrand is the thing that multiplies ${dt_}.`},
+
+{id:'bike',tier:'Warm-up',kind:'int',title:'Bike speeding up',scene:'mover',icon:'bike',
+ params:r=>({a:r(0.5,2,0.1),T:r(5,20,1)}),
+ sym:[['a',U.mps2,'how much the speed grows every second'],['T',U.s,'how long it rides']],
+ vars:[['t',U.s,'time since the bike set off']],
+ text:`A cyclist starts from rest and speeds up evenly. Every second the speed grows by ${S('a')}, so the speed at time ${S('t')} is ${S('v')}(${S('t')}) = ${S('a')}${S('t')}. How far has the bike gone after a time ${S('T')}?`,
+ phys:[`Distance covered in a short time: ${dx_} = ${S('v')}·${dt_}`],
+ ans:{lhs:S('d'),name:'distance',rate:'Distance per second (the speed)',u:U.m,f:P=>P.a*P.T*P.T/2},
+ sol:{f:'a t',v:'t',lo:'0',hi:'T'},
+ guide:[['Graph tip','This time the speed line slopes up from zero, because the bike keeps getting faster. The area under it is a triangle, and that area is the distance.']],
+ pos:(P,t)=>P.a*t*t/2,posEnd:P=>P.a*P.T*P.T/2,
+ hint:`The speed is no longer constant: at time ${S('t')} it is ${S('a')}${S('t')}. In a short moment ${dt_} the bike moves ${S('a')}${S('t')}·${dt_}. Add these from ${S('t')} = 0 to ${S('t')} = ${S('T')}.`},
+
+{id:'charge',tier:'Warm-up',kind:'int',title:'Phone charging',scene:'battery',
+ params:r=>({P0:r(10,30,1),T:r(1200,3600,300)}),
+ sym:[['P0',U.W,'charging power at the start'],['T',U.s,'time until the power reaches zero']],
+ vars:[['t',U.s,'time since you plugged in']],
+ text:`When you plug in a phone, the charger starts at power ${S('P0')}. The power then falls evenly until it reaches zero after a time ${S('T')}, so ${S('P')}(${S('t')}) = ${S('P0')}·(1 − ${S('t')}/${S('T')}). How much energy ${S('E')} goes into the battery?`,
+ phys:[`Power is energy per second: 1 W = 1 J/s`,`Energy delivered in a short time: <i class="mv">dE</i> = ${S('P')}·${dt_}`],
+ ans:{lhs:S('E'),name:'energy',rate:'Energy per second (the power)',u:U.J,f:P=>P.P0*P.T/2},
+ sol:{f:'P0 (1 - t/T)',v:'t',lo:'0',hi:'T'},
+ guide:[['Graph tip','The height of the line is the power at each moment. It starts high and slopes down to zero. The area under it is the energy that went into the battery.']],
+ hint:`In a short moment ${dt_} the charger delivers ${S('P')}(${S('t')})·${dt_} of energy. Write ${S('P')}(${S('t')}) using ${S('P0')}, ${S('t')} and ${S('T')}, then add from ${S('t')} = 0 to ${S('t')} = ${S('T')}.`},
+
+{id:'train',tier:'Warm-up',kind:'der',title:'Speed from distance',scene:'mover',icon:'car',
+ params:r=>({c:r(0.2,1.5,0.1)}),
+ sym:[['c',U.mps2,'a constant that says how hard the train accelerates']],
+ vars:[['t',U.s,'time since the train left']],v:'t',dom:P=>[0,30],
+ text:`A train pulls out of a station. Its distance from the platform is ${S('x')}(${S('t')}) = ${S('c')}${S('t')}². Build its speed ${S('v')}(${S('t')}).`,
+ phys:[`Speed is how fast distance changes: ${S('v')} = ${dx_}/${dt_}`,`Power rule: <i class="mv">d</i>/${dt_} (${S('t')}²) = 2${S('t')}`,`A constant in front stays in front: <i class="mv">d</i>/${dt_} (${S('c')}·${S('t')}²) = ${S('c')}·<i class="mv">d</i>/${dt_} (${S('t')}²)`],
+ ans:{lhs:`${S('v')}(${S('t')})`,name:'speed',u:U.mps},
+ sol:{f:'2 c t'},given:{lhs:`${S('x')}(${S('t')})`,name:'distance from the platform',f:'c t^2',u:U.m,sign:1},
+ guide:[['Graph tip','The top graph is the distance. Its steepness (slope) at any moment is the speed. Your expression gets its own graph underneath.']],
+ pos:(P,t)=>P.c*t*t,posEnd:P=>P.c*900,
+ hint:`Use the power rule on ${S('t')}² and keep ${S('c')} in front.`},
+
+{id:'drain',tier:'Warm-up',kind:'der',title:'Draining pool',scene:'pool',
+ params:r=>({h0:r(1.5,2.5,0.1),k:P6(r(1,4,0.5)*1e-3)}),
+ sym:[['h0',U.m,'water depth when the drain opens'],['k',U.mps,'how much the depth drops each second']],
+ vars:[['t',U.s,'time since the drain opened']],v:'t',dom:P=>[0,P.h0/P.k],
+ text:`A pool is being drained. Its water depth is ${S('h')}(${S('t')}) = ${S('h0')} − ${S('k')}${S('t')}. Build <i class="mv">dh</i>/${dt_}, the rate the depth changes. Should it be positive or negative?`,
+ phys:[`The derivative of a constant is 0`,`<i class="mv">d</i>/${dt_} (${S('k')}·${S('t')}) = ${S('k')}`],
+ ans:{lhs:`<i class="mv">dh</i>/${dt_}`,name:'rate the depth changes',u:U.mps},
+ sol:{f:'-k'},given:{lhs:`${S('h')}(${S('t')})`,name:'water depth',f:'h0 - k t',u:U.m,sign:1},
+ guide:[['Graph tip','A straight line has the same slope everywhere, so the answer is a single constant. A line that goes down has a negative slope.']],
+ hint:`${S('h0')} never changes, so it disappears. The ${S('k')}${S('t')} term shrinks the depth at a steady rate ${S('k')}, so its derivative is ${S('k')}, with the minus sign kept.`},
+
+/* ================= Basics ================= */
 {id:'rod',tier:'Basics',kind:'int',title:'Tapered rod',scene:'rod',
  params:r=>{const l0=r(2,5,0.5);return {L:r(1,3,0.5),'λ0':l0,'λ1':+(l0+r(2,6,0.5)).toFixed(2)};},
- sym:[['L',U.m,'length of the rod'],['λ0',U.kgpm,'mass per metre at the thin end'],['λ1',U.kgpm,'mass per metre at the thick end'],['g',U.mps2,'gravitational acceleration',g0]],
- vars:[['x',U.m,'distance from the thin end'],['t',U.s,'time']],
+ sym:[['L',U.m,'length of the rod'],['λ0',U.kgpm,'mass per metre at the thin end'],['λ1',U.kgpm,'mass per metre at the thick end']],
+ vars:[['x',U.m,'distance from the thin end']],
  text:`A steel rod of length ${S('L')} gets thicker toward one end. Its mass per metre is ${S('λ0')} at the thin end and rises evenly to ${S('λ1')} at the thick end. What is the rod’s total mass ${S('M')}?`,
- phys:[`Mass of a short piece: <i class="mv">dm</i> = ${S('λ')}·<i class="mv">dx</i>, where ${S('λ')} is the mass per metre at that spot`,`A quantity that changes evenly along a length is a straight line: start value + slope × distance`],
- ans:{lhs:S('M'),u:U.kg,f:P=>P.L*(P['λ0']+P['λ1'])/2},
+ phys:[`Mass of a short piece: <i class="mv">dm</i> = ${S('λ')}·${dx_}, where ${S('λ')} is the mass per metre at that spot`,`A quantity that changes evenly along a length is a straight line: start value + slope × distance`],
+ ans:{lhs:S('M'),name:'mass',rate:'Mass per metre at that spot',u:U.kg,f:P=>P.L*(P['λ0']+P['λ1'])/2},
  sol:{f:'λ0 + (λ1 - λ0) x / L',v:'x',lo:'0',hi:'L'},
- hint:`Cut the rod into short pieces of length <i class="mv">dx</i>. A piece at position ${S('x')} has mass ${S('λ')}(${S('x')})·<i class="mv">dx</i>. Write ${S('λ')}(${S('x')}) as a straight line that equals ${S('λ0')} at ${S('x')} = 0 and ${S('λ1')} at ${S('x')} = ${S('L')}, then add the pieces from one end to the other.`},
+ guide:[['Graph tip','The height of the line is the mass per metre at each spot, not the mass. A 1 cm piece at the thin end weighs about λ₀ × 0.01 m. The area under the line is the total mass.']],
+ hint:`Cut the rod into short pieces of length ${dx_}. A piece at position ${S('x')} has mass ${S('λ')}(${S('x')})·${dx_}. Write ${S('λ')}(${S('x')}) as a straight line that equals ${S('λ0')} at ${S('x')} = 0 and ${S('λ1')} at ${S('x')} = ${S('L')}, then add the pieces from one end to the other.`},
 
 {id:'lift',tier:'Basics',kind:'int',title:'Express elevator',scene:'lift',
  params:r=>({vmax:r(2,6,0.5),T:r(8,20,1)}),
- sym:[['vmax',U.mps,'top speed'],['T',U.s,'length of the ride'],['m',U.kg,'mass of the loaded cabin',1200],['g',U.mps2,'gravitational acceleration',g0]],
- vars:[['t',U.s,'time since the doors closed'],['h',U.m,'height of the cabin']],
+ sym:[['vmax',U.mps,'top speed'],['T',U.s,'length of the ride']],
+ vars:[['t',U.s,'time since the doors closed']],
  text:`An express elevator starts and stops at rest. During the ride its speed is ${S('v')}(${S('t')}) = ${S('vmax')}·sin(π${S('t')}/${S('T')}), where ${S('T')} is the length of the ride. How high does it climb?`,
- phys:[`Velocity is how fast position changes: ${S('v')} = <i class="mv">dh</i>/<i class="mv">dt</i>`,`Height gained in a short time: <i class="mv">dh</i> = ${S('v')}·<i class="mv">dt</i>`],
- ans:{lhs:'<span class="mn">Δ</span>'+S('h'),u:U.m,f:P=>2*P.vmax*P.T/Math.PI},
+ phys:[`Height gained in a short time: <i class="mv">dh</i> = ${S('v')}·${dt_}`],
+ ans:{lhs:'<span class="mn">Δ</span>'+S('h'),name:'height gained',rate:'Height gained per second (the speed)',u:U.m,f:P=>2*P.vmax*P.T/Math.PI},
  sol:{f:'vmax sin(π t / T)',v:'t',lo:'0',hi:'T'},
- hint:`In a short time <i class="mv">dt</i> the cabin rises ${S('v')}·<i class="mv">dt</i>. Add these up from the start of the ride (${S('t')} = 0) to the end (${S('t')} = ${S('T')}).`},
+ hint:`In a short time ${dt_} the cabin rises ${S('v')}·${dt_}. Add these up from the start of the ride (${S('t')} = 0) to the end (${S('t')} = ${S('T')}).`},
 
 {id:'ball',tier:'Basics',kind:'der',title:'Tossed ball',scene:'ball',
  params:r=>({h0:r(1,2,0.1),v0:r(8,20,1)}),
- sym:[['h0',U.m,'launch height'],['v0',U.mps,'launch speed'],['g',U.mps2,'gravitational acceleration',g0],['m',U.kg,'mass of the ball',0.15]],
+ sym:[['h0',U.m,'launch height'],['v0',U.mps,'launch speed'],['g',U.mps2,'gravitational acceleration',g0]],
  vars:[['t',U.s,'time since the throw']],v:'t',dom:P=>[0,2*P.v0/g0],
  text:`A ball is thrown straight up from height ${S('h0')} with speed ${S('v0')}. Its height is ${S('y')}(${S('t')}) = ${S('h0')} + ${S('v0')}${S('t')} − ½${S('g')}${S('t')}². Build its velocity ${S('v')}(${S('t')}).`,
- phys:[`Velocity: ${S('v')} = <i class="mv">dy</i>/<i class="mv">dt</i>`,`Power rule: <i class="mv">d</i>/<i class="mv">dt</i> (${S('t')}<sup>${S('n')}</sup>) = ${S('n')}·${S('t')}<sup>${S('n')}−1</sup>`,`The derivative of a constant is 0`],
- ans:{lhs:`${S('v')}(${S('t')})`,u:U.mps},
- sol:{f:'v0 - g t'},given:{lhs:`${S('y')}(${S('t')})`,f:'h0 + v0 t - g t^2/2',u:U.m,sign:1},
+ phys:[`Velocity: ${S('v')} = ${dy_}/${dt_}`,`Power rule: <i class="mv">d</i>/${dt_} (${S('t')}<sup>${S('n')}</sup>) = ${S('n')}·${S('t')}<sup>${S('n')}−1</sup>`,`The derivative of a constant is 0`],
+ ans:{lhs:`${S('v')}(${S('t')})`,name:'velocity',u:U.mps},
+ sol:{f:'v0 - g t'},given:{lhs:`${S('y')}(${S('t')})`,name:'height of the ball',f:'h0 + v0 t - g t^2/2',u:U.m,sign:1},
  hint:`Differentiate ${S('y')}(${S('t')}) one term at a time. ${S('h0')} doesn’t change with time, ${S('v0')}${S('t')} changes at a steady rate, and ½${S('g')}${S('t')}² follows the power rule.`},
 
+/* ================= Practical ================= */
 {id:'brake',tier:'Practical',kind:'int',title:'Hot brakes',scene:'road',
  params:r=>({v0:r(20,35,1),k:r(0.5,2,0.1)}),
- sym:[['v0',U.mps,'speed when braking starts'],['k',U.mps3,'how fast the deceleration grows'],['m',U.kg,'mass of the car',1400],['μ',U.none,'tyre friction coefficient',0.8]],
- vars:[['t',U.s,'time since braking began'],['s',U.s,'a second time variable, for an integral inside an integral'],['x',U.m,'distance along the road']],
+ sym:[['v0',U.mps,'speed when braking starts'],['k',U.mps3,'how fast the deceleration grows']],
+ vars:[['t',U.s,'time since braking began'],['s',U.s,'a second time variable, for an integral inside an integral']],
  text:`A car moving at ${S('v0')} brakes hard. As the brake pads heat up, the deceleration grows with time: ${S('a')}(${S('t')}) = −${S('k')}${S('t')}. How far does the car travel before it stops? You’ll need to work out when it stops.`,
- phys:[`Acceleration: ${S('a')} = <i class="mv">dv</i>/<i class="mv">dt</i>, so ${S('v')}(${S('t')}) = ${S('v0')} + <span class="mn">∫</span>${S('a')} <i class="mv">ds</i> from 0 to ${S('t')}`,`Distance in a short time: <i class="mv">dx</i> = ${S('v')}·<i class="mv">dt</i>`,`The car stops when ${S('v')} = 0`],
- ans:{lhs:S('d'),u:U.m,f:P=>{const T=Math.sqrt(2*P.v0/P.k);return 2/3*P.v0*T;}},
+ phys:[`Acceleration: ${S('a')} = <i class="mv">dv</i>/${dt_}, so ${S('v')}(${S('t')}) = ${S('v0')} + <span class="mn">∫</span>${S('a')} ${ds_} from 0 to ${S('t')}`,`Distance in a short time: ${dx_} = ${S('v')}·${dt_}`,`The car stops when ${S('v')} = 0`],
+ ans:{lhs:S('d'),name:'braking distance',rate:'Distance per second (the speed)',u:U.m,f:P=>{const T=Math.sqrt(2*P.v0/P.k);return 2/3*P.v0*T;}},
  sol:{f:'v0 - k t^2/2',v:'t',lo:'0',hi:'√(2 v0/k)'},
- hint:`First find ${S('v')}(${S('t')}): integrate ${S('a')} from 0 to ${S('t')} and add ${S('v0')}. The car stops when ${S('v')}(${S('t')}) = 0; solve that for ${S('t')} to get your upper limit. Then add up ${S('v')}·<i class="mv">dt</i>.`},
+ hint:`First find ${S('v')}(${S('t')}): integrate ${S('a')} from 0 to ${S('t')} and add ${S('v0')}. The car stops when ${S('v')}(${S('t')}) = 0; solve that for ${S('t')} to get your upper limit. Then add up ${S('v')}·${dt_}.`},
 
 {id:'pump',tier:'Practical',kind:'int',title:'Emptying a water tank',scene:'tank',
  params:r=>({R:r(0.5,2,0.1),H:r(2,6,0.5),a:r(0.5,2,0.5)}),
- sym:[['R',U.m,'radius of the tank'],['H',U.m,'height of the tank'],['a',U.m,'height of the outlet above the rim'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0],['P',U.W,'power of the pump',2000]],
- vars:[['y',U.m,'height above the tank bottom'],['x',U.m,'horizontal distance from the tank’s centre line']],
+ sym:[['R',U.m,'radius of the tank'],['H',U.m,'height of the tank'],['a',U.m,'height of the outlet above the rim'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['y',U.m,'height above the tank bottom']],
  text:`A vertical cylindrical tank with radius ${S('R')} and height ${S('H')} is full of water. A pump lifts the water out through an outlet pipe that ends a height ${S('a')} above the top rim. How much work does the pump do to empty the tank?`,
  phys:[`Work to lift something: ${S('W')} = ${S('F')}·${S('d')}`,`Weight: ${S('F')} = ${S('m')}${S('g')}`,`Mass from density: ${S('m')} = ${S('ρ')}${S('V')}`,`Volume of a thin disc: ${S('V')} = π${S('r')}² × thickness`],
- ans:{lhs:S('W'),u:U.J,f:P=>P['ρ']*P.g*Math.PI*P.R*P.R*(P.H*P.H/2+P.a*P.H)},
+ ans:{lhs:S('W'),name:'work',rate:'Work per metre of height',u:U.J,f:P=>P['ρ']*P.g*Math.PI*P.R*P.R*(P.H*P.H/2+P.a*P.H)},
  sol:{f:'ρ g π R^2 (H + a - y)',v:'y',lo:'0',hi:'H'},
- hint:`Slice the water into thin discs of thickness <i class="mv">dy</i>. A disc at height ${S('y')} has volume π${S('R')}²·<i class="mv">dy</i>, weight ${S('ρ')}${S('g')} times that, and must be lifted from ${S('y')} up to the outlet at ${S('H')} + ${S('a')}.`},
+ hint:`Slice the water into thin discs of thickness ${dy_}. A disc at height ${S('y')} has volume π${S('R')}²·${dy_}, weight ${S('ρ')}${S('g')} times that, and must be lifted from ${S('y')} up to the outlet at ${S('H')} + ${S('a')}.`},
 
 {id:'dam',tier:'Practical',kind:'int',title:'Sluice gate',scene:'dam',
  params:r=>{const D=r(8,30,1);return {w:r(2,8,0.5),D,b:Math.max(1,Math.round(r(0.2,0.6,0.1)*D*2)/2)};},
- sym:[['w',U.m,'width of the gate'],['b',U.m,'height of the gate, measured up from the floor'],['D',U.m,'depth of the water'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0],['p0',U.Pa,'air pressure (it pushes on both sides of the gate)',101325]],
- vars:[['y',U.m,'height above the reservoir floor'],['h',U.m,'depth below the water surface']],
+ sym:[['w',U.m,'width of the gate'],['b',U.m,'height of the gate, measured up from the floor'],['D',U.m,'depth of the water'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['y',U.m,'height above the reservoir floor']],
  text:`A dam holds back a reservoir of depth ${S('D')}. At the foot of the dam is a rectangular sluice gate, ${S('w')} wide and ${S('b')} tall, starting at the reservoir floor. Water pressure grows with depth. Find the total force the water puts on the gate.`,
- phys:[`Pressure at depth ${S('h')}: ${S('p')} = ${S('ρ')}${S('g')}${S('h')}`,`Force from pressure on a flat area: ${S('F')} = ${S('p')}${S('A')}`,`Area of a thin horizontal strip: ${S('A')} = width × height of the strip`],
- ans:{lhs:S('F'),u:U.N,f:P=>P['ρ']*P.g*P.w*(P.D*P.b-P.b*P.b/2)},
+ phys:[`Pressure at depth ${S('h')} below the surface: ${S('p')} = ${S('ρ')}${S('g')}${S('h')}`,`Force from pressure on a flat area: ${S('F')} = ${S('p')}${S('A')}`,`Area of a thin horizontal strip: ${S('A')} = width × height of the strip`],
+ ans:{lhs:S('F'),name:'force on the gate',rate:'Force per metre of height',u:U.N,f:P=>P['ρ']*P.g*P.w*(P.D*P.b-P.b*P.b/2)},
  sol:{f:'ρ g (D - y) w',v:'y',lo:'0',hi:'b'},
- hint:`Cut the gate into horizontal strips of height <i class="mv">dy</i>. A strip at height ${S('y')} sits at depth ${S('D')} − ${S('y')}, so it feels pressure ${S('ρ')}${S('g')}(${S('D')} − ${S('y')}) over an area ${S('w')}·<i class="mv">dy</i>. The gate runs from the floor up to ${S('b')}. Air pressure cancels out because it acts on both sides.`},
+ hint:`Cut the gate into horizontal strips of height ${dy_}. A strip at height ${S('y')} sits at depth ${S('D')} − ${S('y')}, so it feels pressure ${S('ρ')}${S('g')}(${S('D')} − ${S('y')}) over an area ${S('w')}·${dy_}. The gate runs from the floor up to ${S('b')}.`},
 
 {id:'cone',tier:'Practical',kind:'der',title:'Filling a cone tank',scene:'cone',
  params:r=>({R:r(1,3,0.5),H:r(2,5,0.5),Q:r(0.05,0.3,0.01)}),
- sym:[['R',U.m,'radius at the top'],['H',U.m,'height of the tank'],['Q',U.m3ps,'inflow rate'],['ρ',U.rho,'density of water',1000],['g',U.mps2,'gravitational acceleration',g0]],
+ sym:[['R',U.m,'radius at the top'],['H',U.m,'height of the tank'],['Q',U.m3ps,'inflow rate']],
  vars:[['h',U.m,'depth of the water']],v:'h',dom:P=>[0.15*P.H,P.H],
- text:`A cone-shaped tank stands point-down. It has top radius ${S('R')} and height ${S('H')}. Water flows in at a steady rate ${S('Q')}. Build <i class="mv">dh</i>/<i class="mv">dt</i>, how fast the water level rises, as a function of the water depth ${S('h')}.`,
- phys:[`Volume of a cone: ${S('V')} = ⅓π${S('r')}²${S('h')}`,`Similar triangles: at any depth, ${S('r')}/${S('h')} = ${S('R')}/${S('H')}`,`Chain rule: <i class="mv">dV</i>/<i class="mv">dt</i> = (<i class="mv">dV</i>/<i class="mv">dh</i>)·(<i class="mv">dh</i>/<i class="mv">dt</i>)`,`The inflow sets <i class="mv">dV</i>/<i class="mv">dt</i> = ${S('Q')}`],
- ans:{lhs:'<i class="mv">dh</i>/<i class="mv">dt</i>',u:U.mps},
+ text:`A cone-shaped tank stands point-down. It has top radius ${S('R')} and height ${S('H')}. Water flows in at a steady rate ${S('Q')}. Build <i class="mv">dh</i>/${dt_}, how fast the water level rises, as a function of the water depth ${S('h')}.`,
+ phys:[`Volume of a cone: ${S('V')} = ⅓π${S('r')}²${S('h')}`,`Similar triangles: at any depth, ${S('r')}/${S('h')} = ${S('R')}/${S('H')}`,`Chain rule: <i class="mv">dV</i>/${dt_} = (<i class="mv">dV</i>/<i class="mv">dh</i>)·(<i class="mv">dh</i>/${dt_})`,`The inflow sets <i class="mv">dV</i>/${dt_} = ${S('Q')}`],
+ ans:{lhs:`<i class="mv">dh</i>/${dt_}`,name:'speed the water level rises',u:U.mps},
  sol:{f:'Q H^2 / (π R^2 h^2)'},
- hint:`Use ${S('r')} = ${S('R')}${S('h')}/${S('H')} to write the water volume with ${S('h')} only. Differentiate both sides with respect to time using the chain rule, set <i class="mv">dV</i>/<i class="mv">dt</i> = ${S('Q')}, and solve for <i class="mv">dh</i>/<i class="mv">dt</i>.`},
+ hint:`Use ${S('r')} = ${S('R')}${S('h')}/${S('H')} to write the water volume with ${S('h')} only. Differentiate both sides with respect to time using the chain rule, set <i class="mv">dV</i>/${dt_} = ${S('Q')}, and solve for <i class="mv">dh</i>/${dt_}.`},
 
+/* ================= Physics ================= */
 {id:'spring',tier:'Physics',kind:'int',title:'Stiffening spring',scene:'spring',
  params:r=>({k:r(50,200,10),'β':r(500,3000,100),X:r(0.1,0.4,0.05)}),
- sym:[['k',U.Npm,'linear stiffness'],['β',U.Npm3,'how much it stiffens'],['X',U.m,'final extension'],['m',U.kg,'mass hanging on it',2],['g',U.mps2,'gravitational acceleration',g0]],
- vars:[['x',U.m,'extension from rest length'],['t',U.s,'time']],
+ sym:[['k',U.Npm,'linear stiffness'],['β',U.Npm3,'how much it stiffens'],['X',U.m,'final extension']],
+ vars:[['x',U.m,'extension from rest length']],
  text:`A heavy-duty spring stiffens as it stretches. The force needed to hold it at extension ${S('x')} is ${S('F')}(${S('x')}) = ${S('k')}${S('x')} + ${S('β')}${S('x')}³. How much work does it take to stretch it from its rest length to an extension ${S('X')}?`,
- phys:[`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·<i class="mv">dx</i>`,`${S('W')} = ${S('F')}·${S('d')} only works when the force stays constant`],
- ans:{lhs:S('W'),u:U.J,f:P=>P.k*P.X*P.X/2+P['β']*P.X**4/4},
+ phys:[`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·${dx_}`,`${S('W')} = ${S('F')}·${S('d')} only works when the force stays constant`],
+ ans:{lhs:S('W'),name:'work',rate:'Work per metre of stretch (the force)',u:U.J,f:P=>P.k*P.X*P.X/2+P['β']*P.X**4/4},
  sol:{f:'k x + β x^3',v:'x',lo:'0',hi:'X'},
- hint:`The force changes as the spring stretches, so split the stretch into short steps <i class="mv">dx</i>. Each step costs ${S('F')}(${S('x')})·<i class="mv">dx</i> of work. Add them from ${S('x')} = 0 to ${S('x')} = ${S('X')}.`},
+ hint:`The force changes as the spring stretches, so split the stretch into short steps ${dx_}. Each step costs ${S('F')}(${S('x')})·${dx_} of work. Add them from ${S('x')} = 0 to ${S('x')} = ${S('X')}.`},
 
 {id:'orbit',tier:'Physics',kind:'int',title:'Lifting to orbit',scene:'earth',
  params:r=>({m:r(500,3000,100),h:r(200,2000,100)*1000}),
- sym:[['G',U.G,'gravitational constant',6.674e-11],['M',U.kg,'mass of Earth',5.972e24],['m',U.kg,'mass of the satellite'],['R',U.m,'radius of Earth',6.371e6],['h',U.m,'altitude to reach'],['g',U.mps2,'gravity at the surface',g0]],
- vars:[['r',U.m,'distance from Earth’s centre'],['y',U.m,'altitude above the surface']],
- text:`Far from the ground, gravity is weaker than ${S('m')}${S('g')}. How much work does it take to lift a satellite of mass ${S('m')} from Earth’s surface to an altitude ${S('h')}? Count only the lifting, not the speed it needs to stay in orbit.`,
- phys:[`Newton’s gravity: ${S('F')} = ${S('G')}${S('M')}${S('m')}/${S('r')}², where ${S('r')} is the distance from Earth’s centre`,`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·<i class="mv">dr</i>`],
- ans:{lhs:S('W'),u:U.J,f:P=>P.G*P.M*P.m*(1/P.R-1/(P.R+P.h))},
+ sym:[['G',U.G,'gravitational constant',6.674e-11],['M',U.kg,'mass of Earth',5.972e24],['m',U.kg,'mass of the satellite'],['R',U.m,'radius of Earth',6.371e6],['h',U.m,'altitude to reach']],
+ vars:[['r',U.m,'distance from Earth’s centre']],
+ text:`Far from the ground, gravity is weaker than at the surface. How much work does it take to lift a satellite of mass ${S('m')} from Earth’s surface to an altitude ${S('h')}? Count only the lifting, not the speed it needs to stay in orbit.`,
+ phys:[`Newton’s gravity: ${S('F')} = ${S('G')}${S('M')}${S('m')}/${S('r')}², where ${S('r')} is the distance from Earth’s centre`,`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·${dr_}`],
+ ans:{lhs:S('W'),name:'work',rate:'Work per metre (the force)',u:U.J,f:P=>P.G*P.M*P.m*(1/P.R-1/(P.R+P.h))},
  sol:{f:'G M m / r^2',v:'r',lo:'R',hi:'R + h'},
- hint:`Measure position by ${S('r')}, the distance from Earth’s centre. The satellite goes from ${S('r')} = ${S('R')} to ${S('r')} = ${S('R')} + ${S('h')}, and over each step <i class="mv">dr</i> the force is ${S('G')}${S('M')}${S('m')}/${S('r')}².`},
+ hint:`Measure position by ${S('r')}, the distance from Earth’s centre. The satellite goes from ${S('r')} = ${S('R')} to ${S('r')} = ${S('R')} + ${S('h')}, and over each step ${dr_} the force is ${S('G')}${S('M')}${S('m')}/${S('r')}².`},
 
 {id:'disc',tier:'Physics',kind:'int',title:'Spinning disc',scene:'disc',
  params:r=>({M:r(1,10,0.5),R:r(0.1,0.5,0.05)}),
- sym:[['M',U.kg,'mass of the disc'],['R',U.m,'radius of the disc'],['ω',U.ps,'spin rate',10]],
- vars:[['r',U.m,'distance from the centre'],['θ',U.none,'angle around the disc']],
+ sym:[['M',U.kg,'mass of the disc'],['R',U.m,'radius of the disc']],
+ vars:[['r',U.m,'distance from the centre']],
  text:`A uniform solid disc with mass ${S('M')} and radius ${S('R')} spins about its centre. Build its moment of inertia ${S('I')} by adding up thin rings.`,
  phys:[`A thin ring of mass <i class="mv">dm</i> at radius ${S('r')}: <i class="mv">dI</i> = ${S('r')}²·<i class="mv">dm</i>`,`Mass per area of a uniform disc: ${S('σ')} = mass ÷ area`,`Area of a circle: ${S('A')} = π${S('r')}²`,`A thin ring’s area is about its circumference × its width`],
- ans:{lhs:S('I'),u:U.kgm2,f:P=>P.M*P.R*P.R/2},
+ ans:{lhs:S('I'),name:'moment of inertia',rate:'Moment of inertia per metre of radius',u:U.kgm2,f:P=>P.M*P.R*P.R/2},
  sol:{f:'r^2 M/(π R^2) 2 π r',v:'r',lo:'0',hi:'R'},
- hint:`A ring at radius ${S('r')} with width <i class="mv">dr</i> has area 2π${S('r')}·<i class="mv">dr</i>. Its mass is ${S('σ')} times that area, with ${S('σ')} = ${S('M')}/(π${S('R')}²). Multiply the ring’s mass by ${S('r')}² and add rings from the centre to the edge.`},
+ hint:`A ring at radius ${S('r')} with width ${dr_} has area 2π${S('r')}·${dr_}. Its mass is ${S('σ')} times that area, with ${S('σ')} = ${S('M')}/(π${S('R')}²). Multiply the ring’s mass by ${S('r')}² and add rings from the centre to the edge.`},
 
 {id:'lj',tier:'Physics',kind:'der',title:'Force between two atoms',scene:'atoms',
- params:r=>({U0:+(r(1,3,0.1)*1e-21).toPrecision(3),a:+(r(0.3,0.4,0.01)*1e-9).toPrecision(3)}),
- sym:[['U0',U.J,'depth of the energy well'],['a',U.m,'separation with the lowest energy'],['m',U.kg,'mass of one atom',6.63e-26]],
+ params:r=>({U0:P6(r(1,3,0.1)*1e-21),a:P6(r(0.3,0.4,0.01)*1e-9)}),
+ sym:[['U0',U.J,'depth of the energy well'],['a',U.m,'separation with the lowest energy']],
  vars:[['x',U.m,'distance between the atoms']],v:'x',dom:P=>[0.92*P.a,2.2*P.a],
- text:`Two atoms interact through the Lennard-Jones potential ${S('U')}(${S('x')}) = ${S('U0')}·((${S('a')}/${S('x')})¹² − 2(${S('a')}/${S('x')})⁶), where ${S('x')} is the distance between them. The force is ${S('F')} = −<i class="mv">dU</i>/<i class="mv">dx</i>, positive when they push apart. Build ${S('F')}(${S('x')}).`,
- phys:[`Force from potential energy: ${S('F')} = −<i class="mv">dU</i>/<i class="mv">dx</i>`,`Power rule: <i class="mv">d</i>/<i class="mv">dx</i> (${S('x')}<sup>${S('n')}</sup>) = ${S('n')}·${S('x')}<sup>${S('n')}−1</sup>`,`(${S('a')}/${S('x')})<sup>${S('n')}</sup> = ${S('a')}<sup>${S('n')}</sup>·${S('x')}<sup>−${S('n')}</sup>`],
- ans:{lhs:`${S('F')}(${S('x')})`,u:U.N},
- sol:{f:'12 U0 / x ((a/x)^12 - (a/x)^6)'},given:{lhs:`${S('U')}(${S('x')})`,f:'U0 ((a/x)^12 - 2 (a/x)^6)',u:U.J,sign:-1},
+ text:`Two atoms interact through the Lennard-Jones potential ${S('U')}(${S('x')}) = ${S('U0')}·((${S('a')}/${S('x')})¹² − 2(${S('a')}/${S('x')})⁶), where ${S('x')} is the distance between them. The force is ${S('F')} = −<i class="mv">dU</i>/${dx_}, positive when they push apart. Build ${S('F')}(${S('x')}).`,
+ phys:[`Force from potential energy: ${S('F')} = −<i class="mv">dU</i>/${dx_}`,`Power rule: <i class="mv">d</i>/${dx_} (${S('x')}<sup>${S('n')}</sup>) = ${S('n')}·${S('x')}<sup>${S('n')}−1</sup>`,`(${S('a')}/${S('x')})<sup>${S('n')}</sup> = ${S('a')}<sup>${S('n')}</sup>·${S('x')}<sup>−${S('n')}</sup>`],
+ ans:{lhs:`${S('F')}(${S('x')})`,name:'force between the atoms',u:U.N},
+ sol:{f:'12 U0 / x ((a/x)^12 - (a/x)^6)'},given:{lhs:`${S('U')}(${S('x')})`,name:'potential energy',f:'U0 ((a/x)^12 - 2 (a/x)^6)',u:U.J,sign:-1},
  hint:`Rewrite each (${S('a')}/${S('x')})<sup>${S('n')}</sup> as ${S('a')}<sup>${S('n')}</sup>${S('x')}<sup>−${S('n')}</sup> so the power rule applies. Differentiate both terms, then flip the sign to get ${S('F')}.`},
 
+/* ================= Extreme ================= */
 {id:'rocket',tier:'Extreme',kind:'int',title:'Interceptor burn',scene:'rocket',
  params:r=>{const m0=r(800,2000,100),q=r(2,8,0.5);return {u:r(2000,3500,100),m0,q,T:Math.round(r(0.4,0.7,0.05)*m0/q)};},
- sym:[['u',U.mps,'exhaust speed'],['q',U.kgps,'fuel burned per second'],['m0',U.kg,'starting mass'],['T',U.s,'burn time'],['g',U.mps2,'gravity on Earth (not out here)',g0]],
- vars:[['t',U.s,'time since ignition'],['s',U.s,'a second time variable, for an integral inside an integral'],['x',U.m,'distance travelled']],
+ sym:[['u',U.mps,'exhaust speed'],['q',U.kgps,'fuel burned per second'],['m0',U.kg,'starting mass'],['T',U.s,'burn time']],
+ vars:[['t',U.s,'time since ignition'],['s',U.s,'a second time variable, for an integral inside an integral']],
  text:`Your interceptor starts at rest in deep space, far from any gravity. Its engine burns fuel at ${S('q')} kilograms per second with exhaust speed ${S('u')}. As the craft gets lighter it accelerates harder: ${S('a')}(${S('t')}) = ${S('u')}${S('q')}/(${S('m0')} − ${S('q')}${S('t')}). How far has it travelled when the engine cuts off at ${S('t')} = ${S('T')}? That distance decides where it can meet the asteroid.`,
- phys:[`${S('a')} = <i class="mv">dv</i>/<i class="mv">dt</i> and ${S('v')} = <i class="mv">dx</i>/<i class="mv">dt</i>`,`Starting from rest, velocity is the accumulated acceleration`,`<span class="mn">∫</span> 1/(${S('c')} − ${S('q')}${S('s')}) <i class="mv">ds</i> = −(1/${S('q')})·ln(${S('c')} − ${S('q')}${S('s')})`],
- ans:{lhs:`${S('x')}(${S('T')})`,u:U.m,f:P=>{const m1=P.m0-P.q*P.T;return P.u*(P.T-(m1/P.q)*Math.log(P.m0/m1));}},
+ phys:[`${S('a')} = <i class="mv">dv</i>/${dt_} and ${S('v')} = ${dx_}/${dt_}`,`Starting from rest, velocity is the accumulated acceleration`,`<span class="mn">∫</span> 1/(${S('c')} − ${S('q')}${S('s')}) ${ds_} = −(1/${S('q')})·ln(${S('c')} − ${S('q')}${S('s')})`],
+ ans:{lhs:`${S('x')}(${S('T')})`,name:'distance',rate:'Distance per second (the speed)',u:U.m,f:P=>{const m1=P.m0-P.q*P.T;return P.u*(P.T-(m1/P.q)*Math.log(P.m0/m1));}},
  sol:{f:'u ln(m0/(m0 - q t))',v:'t',lo:'0',hi:'T'},
- hint:`It takes two steps. Velocity is the sum of ${S('a')}(${S('s')})·<i class="mv">ds</i> from 0 to ${S('t')}. Position is the sum of ${S('v')}(${S('t')})·<i class="mv">dt</i> from 0 to ${S('T')}. Either integrate ${S('a')} by hand first, or put one ∫ inside the other with the nested ∫ block.`},
+ hint:`It takes two steps. Velocity is the sum of ${S('a')}(${S('s')})·${ds_} from 0 to ${S('t')}. Position is the sum of ${S('v')}(${S('t')})·${dt_} from 0 to ${S('T')}. Either integrate ${S('a')} by hand first, or put one ∫ inside the other with the nested ∫ block.`},
 
-{id:'track',tier:'Extreme',kind:'int',title:'Predicting the asteroid',scene:'track',
+{id:'track',tier:'Extreme',kind:'int',title:'Predicting the asteroid',scene:'track',fx:['sin'],
  params:r=>({x0:r(20,80,5)*1000,v0:r(5,20,1),'α':r(0.01,0.05,0.005),'ω':Math.round(2*Math.PI/r(200,600,50)*1e5)/1e5,T:r(600,1800,100)}),
- sym:[['x0',U.m,'distance when first tracked'],['v0',U.mps,'speed away from you when first tracked'],['α',U.mps2,'strength of the periodic push'],['ω',U.ps,'angular frequency of the push'],['T',U.s,'how far ahead to predict'],['m',U.kg,'mass of the asteroid',2e9]],
+ sym:[['x0',U.m,'distance when first tracked'],['v0',U.mps,'speed away from you when first tracked'],['α',U.mps2,'strength of the periodic push'],['ω',U.ps,'angular frequency of the push'],['T',U.s,'how far ahead to predict']],
  vars:[['t',U.s,'time since first tracked'],['s',U.s,'a second time variable, for an integral inside an integral']],
  text:`Radar puts an asteroid at distance ${S('x0')} along your tracking line, moving away at ${S('v0')}. Sunlight heating its surface adds a small periodic push, ${S('a')}(${S('t')}) = ${S('α')}·sin(${S('ω')}${S('t')}). Predict where it will be at time ${S('T')}, so the interceptor can be aimed there.`,
- phys:[`Position = starting position + distance covered since`,`Velocity = starting velocity + accumulated acceleration`,`<span class="mn">∫</span> sin(${S('ω')}${S('s')}) <i class="mv">ds</i> = −cos(${S('ω')}${S('s')})/${S('ω')}`],
- ans:{lhs:`${S('x')}(${S('T')})`,u:U.m,f:P=>P.x0+P.v0*P.T+P['α']/P['ω']*(P.T-Math.sin(P['ω']*P.T)/P['ω'])},
+ phys:[`Position = starting position + distance covered since`,`Velocity = starting velocity + accumulated acceleration`,`<span class="mn">∫</span> sin(${S('ω')}${S('s')}) ${ds_} = −cos(${S('ω')}${S('s')})/${S('ω')}`],
+ ans:{lhs:`${S('x')}(${S('T')})`,name:'position',rate:'Distance covered per second (the speed)',u:U.m,f:P=>P.x0+P.v0*P.T+P['α']/P['ω']*(P.T-Math.sin(P['ω']*P.T)/P['ω'])},
  sol:{pre:'x0',f:'v0 + α (1 - cos(ω t))/ω',v:'t',lo:'0',hi:'T'},
  hint:`Start from the known position ${S('x0')} and add the distance covered. The velocity at time ${S('t')} is ${S('v0')} plus the integral of ${S('a')}(${S('s')}) from 0 to ${S('t')}. That velocity goes inside an integral from 0 to ${S('T')}, and ${S('x0')} goes in a term outside the integral.`},
 
 {id:'los',tier:'Extreme',kind:'der',title:'Line-of-sight rate',scene:'los',
  params:r=>({D:r(5,50,1)*1000,u:r(2,15,0.5)*1000}),
- sym:[['D',U.m,'closest distance of the path'],['u',U.mps,'speed of the asteroid'],['c',U.mps,'speed of light (radar)',2.998e8]],
+ sym:[['D',U.m,'closest distance of the path'],['u',U.mps,'speed of the asteroid']],
  vars:[['t',U.s,'time from closest approach']],v:'t',dom:P=>[-3*P.D/P.u,3*P.D/P.u],
- text:`A tracking station watches an asteroid fly past on a straight path. The path comes no closer than ${S('D')}, the asteroid moves at speed ${S('u')}, and closest approach happens at ${S('t')} = 0. The line-of-sight angle is ${S('θ')}(${S('t')}) = atan(${S('u')}${S('t')}/${S('D')}). Proportional navigation steers an interceptor by how fast this angle turns. Build <i class="mv">dθ</i>/<i class="mv">dt</i>.`,
- phys:[`Chain rule: <i class="mv">d</i>/<i class="mv">dt</i> ${S('f')}(${S('z')}(${S('t')})) = ${S('f')}′(${S('z')})·${S('z')}′(${S('t')})`,`<i class="mv">d</i>/<i class="mv">dz</i> atan(${S('z')}) = 1/(1 + ${S('z')}²)`],
- ans:{lhs:'<i class="mv">dθ</i>/<i class="mv">dt</i>',u:U.ps},
- sol:{f:'(u/D) / (1 + (u t/D)^2)'},given:{lhs:`${S('θ')}(${S('t')})`,f:'atan(u t / D)',u:U.none,sign:1},
- hint:`Let ${S('z')} = ${S('u')}${S('t')}/${S('D')}. Then ${S('θ')} = atan(${S('z')}), so <i class="mv">dθ</i>/<i class="mv">dt</i> = (<i class="mv">dθ</i>/<i class="mv">dz</i>)·(<i class="mv">dz</i>/<i class="mv">dt</i>).`},
+ text:`A tracking station watches an asteroid fly past on a straight path. The path comes no closer than ${S('D')}, the asteroid moves at speed ${S('u')}, and closest approach happens at ${S('t')} = 0. The line-of-sight angle is ${S('θ')}(${S('t')}) = atan(${S('u')}${S('t')}/${S('D')}). Proportional navigation steers an interceptor by how fast this angle turns. Build <i class="mv">dθ</i>/${dt_}.`,
+ phys:[`Chain rule: <i class="mv">d</i>/${dt_} ${S('f')}(${S('z')}(${S('t')})) = ${S('f')}′(${S('z')})·${S('z')}′(${S('t')})`,`<i class="mv">d</i>/<i class="mv">dz</i> atan(${S('z')}) = 1/(1 + ${S('z')}²)`],
+ ans:{lhs:`<i class="mv">dθ</i>/${dt_}`,name:'turn rate of the sightline',u:U.ps},
+ sol:{f:'(u/D) / (1 + (u t/D)^2)'},given:{lhs:`${S('θ')}(${S('t')})`,name:'sightline angle',f:'atan(u t / D)',u:U.none,uLabel:'rad',sign:1},
+ hint:`Let ${S('z')} = ${S('u')}${S('t')}/${S('D')}. Then ${S('θ')} = atan(${S('z')}), so <i class="mv">dθ</i>/${dt_} = (<i class="mv">dθ</i>/<i class="mv">dz</i>)·(<i class="mv">dz</i>/${dt_}).`},
+
+/* ================= Military ================= */
+{id:'tank',tier:'Military',kind:'int',title:'Tank pulls away',scene:'mover',icon:'tank',
+ params:r=>({vmax:r(15,20,0.5),'τ':r(4,10,0.5),T:r(10,40,5)}),
+ sym:[['vmax',U.mps,'top speed'],['τ',U.s,'sets how quickly it reaches top speed'],['T',U.s,'how long to watch it']],
+ vars:[['t',U.s,'time since it started moving']],
+ text:`A 60-tonne main battle tank pulls away from a standstill. Its speed climbs toward a top speed ${S('vmax')} and then levels off: ${S('v')}(${S('t')}) = ${S('vmax')}·(1 − e<sup>−${S('t')}/${S('τ')}</sup>). How far does it travel in the first ${S('T')} seconds?`,
+ phys:[`Distance covered in a short time: ${dx_} = ${S('v')}·${dt_}`,`Type e<sup>−${S('t')}/${S('τ')}</sup> as exp(−t/τ)`],
+ ans:{lhs:S('d'),name:'distance',rate:'Distance per second (the speed)',u:U.m,f:P=>P.vmax*(P.T-P['τ']*(1-Math.exp(-P.T/P['τ'])))},
+ sol:{f:'vmax (1 - exp(-t/τ))',v:'t',lo:'0',hi:'T'},
+ guide:[['Graph tip','The speed line rises quickly, then flattens out near top speed. The area under it is the distance.']],
+ pos:(P,t)=>P.vmax*(t-P['τ']*(1-Math.exp(-t/P['τ']))),posEnd:P=>P.vmax*(P.T-P['τ']*(1-Math.exp(-P.T/P['τ']))),
+ hint:`In a short moment ${dt_} the tank moves ${S('v')}(${S('t')})·${dt_}. Put the speed formula in as the integrand and add from ${S('t')} = 0 to ${S('t')} = ${S('T')}. You don’t need to integrate the exponential by hand; the app does the adding.`},
+
+{id:'recoil',tier:'Military',kind:'int',title:'Field gun recoil',scene:'recoil',
+ params:r=>({F0:P6(r(2,6,0.5)*1e5),'τ':P6(r(5,15,1)*1e-3),M:r(800,2000,100)}),
+ sym:[['F0',U.N,'push on the barrel at the moment of firing'],['τ',U.s,'how long the push lasts'],['M',U.kg,'mass of the recoiling parts']],
+ vars:[['t',U.s,'time since firing']],
+ text:`When a field gun fires, the propellant gas shoves the barrel backwards. The push falls off quickly: ${S('F')}(${S('t')}) = ${S('F0')}·(1 − ${S('t')}/${S('τ')})² for the ${S('τ')} seconds it lasts. The recoiling parts have mass ${S('M')} and start at rest. How fast are they moving backwards when the push ends?`,
+ phys:[`Newton’s second law: ${S('F')} = ${S('M')}${S('a')}, so ${S('a')} = ${S('F')}/${S('M')}`,`Speed gained in a short time: <i class="mv">dv</i> = ${S('a')}·${dt_}`],
+ ans:{lhs:S('v'),name:'recoil speed',rate:'Speed gained per second (the acceleration)',u:U.mps,f:P=>P.F0*P['τ']/(3*P.M)},
+ sol:{f:'F0 (1 - t/τ)^2 / M',v:'t',lo:'0',hi:'τ'},
+ hint:`At each moment the acceleration is ${S('F')}(${S('t')})/${S('M')}. In a short moment ${dt_} the speed grows by that times ${dt_}. Add from the shot (${S('t')} = 0) to the end of the push (${S('t')} = ${S('τ')}).`},
+
+{id:'muzzle',tier:'Military',kind:'int',title:'Muzzle energy',scene:'barrel',
+ params:r=>({F0:P6(r(1,4,0.5)*1e6),L0:r(0.2,0.6,0.1),Lb:r(3,6,0.5)}),
+ sym:[['F0',U.N,'push on the shell at the start'],['L0',U.m,'length of the gas pocket at the start'],['Lb',U.m,'length of the barrel']],
+ vars:[['x',U.m,'how far the shell has moved down the barrel']],
+ text:`Inside a gun barrel, expanding gas pushes the shell forward. As the gas expands the push weakens: ${S('F')}(${S('x')}) = ${S('F0')}·${S('L0')}/(${S('L0')} + ${S('x')}), where ${S('x')} is how far the shell has moved. The barrel is ${S('Lb')} long. How much kinetic energy does the shell have when it leaves the muzzle?`,
+ phys:[`Work over a short distance: <i class="mv">dW</i> = ${S('F')}·${dx_}`,`Work done on something that starts at rest becomes its kinetic energy`],
+ ans:{lhs:'<i class="mv">E</i><sub>k</sub>',name:'kinetic energy',rate:'Energy per metre of barrel (the force)',u:U.J,f:P=>P.F0*P.L0*Math.log((P.L0+P.Lb)/P.L0)},
+ sol:{f:'F0 L0/(L0 + x)',v:'x',lo:'0',hi:'Lb'},
+ hint:`Each short step ${dx_} down the barrel, the gas does work ${S('F')}(${S('x')})·${dx_} on the shell. Add these from the start (${S('x')} = 0) to the muzzle (${S('x')} = ${S('Lb')}).`},
+
+{id:'drag',tier:'Military',kind:'int',title:'Shell slowed by air',scene:'mover',icon:'shell',
+ params:r=>({u0:r(300,700,50),k:r(0.01,0.05,0.005),T:r(10,40,5)}),
+ sym:[['u0',U.mps,'horizontal speed leaving the gun'],['k',U.ps,'how strongly the air slows it'],['T',U.s,'flight time']],
+ vars:[['t',U.s,'time since it left the gun']],
+ text:`An artillery shell leaves the gun with horizontal speed ${S('u0')}. Air drag slows it, so its horizontal speed is ${S('u')}(${S('t')}) = ${S('u0')}·e<sup>−${S('k')}${S('t')}</sup>. How far does it travel horizontally during a flight lasting ${S('T')}?`,
+ phys:[`Horizontal distance in a short time: ${dx_} = ${S('u')}·${dt_}`,`Type e<sup>−${S('k')}${S('t')}</sup> as exp(−k t)`],
+ ans:{lhs:S('d'),name:'horizontal distance',rate:'Distance per second (the speed)',u:U.m,f:P=>P.u0*(1-Math.exp(-P.k*P.T))/P.k},
+ sol:{f:'u0 exp(-k t)',v:'t',lo:'0',hi:'T'},
+ pos:(P,t)=>P.u0*(1-Math.exp(-P.k*t))/P.k,posEnd:P=>P.u0*(1-Math.exp(-P.k*P.T))/P.k,
+ hint:`In a short moment ${dt_} the shell moves ${S('u')}(${S('t')})·${dt_} sideways. Use the speed formula as the integrand and add over the whole flight.`},
+
+{id:'drone',tier:'Military',kind:'der',title:'Incoming drone',scene:'drone',
+ params:r=>({D:r(1,5,0.5)*1000,u:r(30,80,5)}),
+ sym:[['D',U.m,'closest distance of the drone’s path'],['u',U.mps,'speed of the drone']],
+ vars:[['t',U.s,'time from closest approach']],v:'t',dom:P=>[-4*P.D/P.u,4*P.D/P.u],
+ text:`A drone flies a straight line that passes a radar at closest distance ${S('D')}, at speed ${S('u')}. Closest approach is at ${S('t')} = 0, so its distance from the radar is ${S('r')}(${S('t')}) = √(${S('D')}² + (${S('u')}${S('t')})²). Build ${dr_}/${dt_}, the rate the distance changes. It should be negative while the drone is approaching.`,
+ phys:[`Chain rule: <i class="mv">d</i>/${dt_} √(${S('z')}) = (1/(2√${S('z')}))·<i class="mv">dz</i>/${dt_}`,`<i class="mv">d</i>/${dt_} (${S('u')}${S('t')})² = 2${S('u')}²${S('t')}`],
+ ans:{lhs:`${dr_}/${dt_}`,name:'rate the distance changes',u:U.mps},
+ sol:{f:'u^2 t / √(D^2 + (u t)^2)'},given:{lhs:`${S('r')}(${S('t')})`,name:'distance from the radar',f:'√(D^2 + (u t)^2)',u:U.m,sign:1},
+ hint:`The inside of the root is ${S('z')} = ${S('D')}² + (${S('u')}${S('t')})². Its derivative is 2${S('u')}²${S('t')}. Multiply that by 1/(2√${S('z')}).`},
+
+{id:'sub',tier:'Military',kind:'der',title:'Diving submarine',scene:'sub',
+ params:r=>({Z:r(100,300,20),'ω':Math.round(Math.PI/r(300,900,60)*1e5)/1e5}),
+ sym:[['Z',U.m,'final depth'],['ω',U.ps,'sets how long the dive takes'],['p0',U.Pa,'air pressure at the surface',101325],['ρ',U.rho,'density of seawater',1025],['g',U.mps2,'gravitational acceleration',g0]],
+ vars:[['t',U.s,'time since the dive began']],v:'t',dom:P=>[0,Math.PI/P['ω']],
+ text:`A submarine dives along a smooth path. Its depth is ${S('z')}(${S('t')}) = ${S('Z')}·(1 − cos(${S('ω')}${S('t')}))/2, levelling off at depth ${S('Z')}. The water pressure on the hull is ${S('p')} = ${S('p0')} + ${S('ρ')}${S('g')}${S('z')}. Build <i class="mv">dp</i>/${dt_}, how fast the pressure on the hull is rising.`,
+ phys:[`Chain rule: <i class="mv">dp</i>/${dt_} = (<i class="mv">dp</i>/<i class="mv">dz</i>)·(<i class="mv">dz</i>/${dt_})`,`<i class="mv">d</i>/${dt_} cos(${S('ω')}${S('t')}) = −${S('ω')}·sin(${S('ω')}${S('t')})`,`The derivative of a constant is 0`],
+ ans:{lhs:`<i class="mv">dp</i>/${dt_}`,name:'rate the pressure rises',u:[-1,1,-3]},
+ sol:{f:'ρ g Z ω sin(ω t)/2'},given:{lhs:`${S('p')}(${S('t')})`,name:'pressure on the hull',f:'p0 + ρ g Z (1 - cos(ω t))/2',u:U.Pa,sign:1},
+ hint:`${S('p0')} is constant, so it drops out. <i class="mv">dp</i>/<i class="mv">dz</i> = ${S('ρ')}${S('g')}. Then differentiate ${S('z')}(${S('t')}): the 1 vanishes and −cos(${S('ω')}${S('t')}) becomes ${S('ω')}·sin(${S('ω')}${S('t')}).`},
+
+{id:'gap',tier:'Military',kind:'int',title:'Intercept course',scene:'intercept',
+ params:r=>{const D0=r(3,8,0.5)*1000,u=r(40,80,5),j=r(5,20,1);let a=0,b=1000;for(let i=0;i<80;i++){const m=(a+b)/2;if(u*m+j*m**3/6<D0)a=m;else b=m;}return {D0,u,j,T:Math.max(2,Math.round(a*r(0.4,0.8,0.1)))};},
+ sym:[['D0',U.m,'starting distance to the drone'],['u',U.mps,'speed of the drone toward you'],['j',U.mps3,'how fast the interceptor’s acceleration grows'],['T',U.s,'time to check']],
+ vars:[['t',U.s,'time since launch'],['s',U.s,'a second time variable, for an integral inside an integral']],
+ text:`An enemy drone is ${S('D0')} away and flying straight at you at speed ${S('u')}. You launch an interceptor from rest toward it. Its motor ramps up, so its acceleration grows with time: ${S('a')}(${S('t')}) = ${S('j')}${S('t')}. Find the gap between them at time ${S('T')}. A negative answer would mean they have already met.`,
+ phys:[`Each second the gap shrinks by the drone’s speed plus the interceptor’s speed`,`Interceptor speed, starting from rest: ${S('v')}(${S('t')}) = <span class="mn">∫</span>${S('a')} ${ds_} from 0 to ${S('t')}`],
+ ans:{lhs:'gap',name:'gap',rate:'Change in the gap per second',u:U.m,f:P=>P.D0-P.u*P.T-P.j*P.T**3/6},
+ sol:{pre:'D0',f:'-(u + j t^2/2)',v:'t',lo:'0',hi:'T'},
+ hint:`Start from ${S('D0')} in the outside term. Each moment ${dt_} the gap changes by −(${S('u')} + ${S('v')}(${S('t')}))·${dt_}, where ${S('v')}(${S('t')}) = ${S('j')}${S('t')}²/2 is the interceptor’s speed. Put that negative rate inside the integral from 0 to ${S('T')}.`},
 ];
-const TIERS=['Basics','Practical','Physics','Extreme'];
+const TIERS=['Warm-up','Basics','Practical','Physics','Extreme','Military'];
 
 function knownOf(t){return new Set(['π',...t.sym.map(s=>s[0]),...t.vars.map(v=>v[0])]);}
 function dimsOf(t){const d={'π':U.none};for(const s of t.sym)d[s[0]]=s[1];for(const v of t.vars)d[v[0]]=v[1];return d;}
@@ -498,64 +715,13 @@ function mkParams(t,seed){const raw=t.params(mkR(seed)),P={'π':Math.PI};for(con
 function envOf(t,P){const e={'π':Math.PI};for(const s of t.sym)e[s[0]]=P[s[0]];return e;}
 function fnOf(ast,env,v){return x=>{const e=Object.create(env);e[v]=x;return ev(ast,e);};}
 </script>
-
 <script id="ui">
-const $=s=>document.querySelector(s);
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-let cur=0,P=null,probe=0.5,nStrips=12,lastField=null,M=null,raf=0;
-const ST={};
-let solved=new Set();
-try{solved=new Set(JSON.parse(localStorage.getItem('slicesum.solved')||'[]'));}catch(e){}
-function saveSolved(){try{localStorage.setItem('slicesum.solved',JSON.stringify([...solved]));}catch(e){}}
-function state(){const t=TPL[cur];return ST[t.id]||(ST[t.id]={f:'',lo:'',hi:'',v:'',pre:'',showPre:false,hint:0,seed:1+Math.floor(Math.random()*1e9),fb:null,showSol:false});}
-function tp(str,K){if(!str||!str.trim())return {empty:true};try{const ast=parse(str,K);return ast?{ast}:{empty:true};}catch(e){return {err:e.user?e.message:'That can’t be read as math yet.'};}}
-
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),near=(a,b,r)=>Math.abs(a-b)<=r*Math.abs(b);
 /* ---------- colours ---------- */
 function colors(){const cs=getComputedStyle(document.documentElement),g=k=>cs.getPropertyValue(k).trim();
   return {ink:g('--ink'),ink2:g('--ink-2'),ink3:g('--ink-3'),rule:g('--rule'),grid:g('--grid'),acc:g('--accent'),ref:g('--ref'),panel:g('--panel'),
-    water:g('--water'),metal:g('--metal'),hot:g('--hot'),good:g('--good'),bad:g('--bad'),paper:g('--paper')};}
-
-/* ---------- reference model ---------- */
-const REF={};
-function refOf(t){const key=t.id+':'+JSON.stringify(P);if(REF[t.id]&&REF[t.id].key===key)return REF[t.id];
-  const K=knownOf(t),E=envOf(t,P),r={key};
-  if(t.kind==='int'){r.v=t.sol.v;r.fx=fnOf(parse(t.sol.f,K),E,t.sol.v);r.lo=ev(parse(t.sol.lo,K),E);r.hi=ev(parse(t.sol.hi,K),E);r.ans=t.ans.f(P);}
-  else{r.v=t.v;r.fx=fnOf(parse(t.sol.f,K),E,t.v);r.dom=t.dom(P);if(t.given)r.gx=fnOf(parse(t.given.f,K),E,t.v);}
-  REF[t.id]=r;return r;}
-
-/* ---------- user model ---------- */
-function buildModel(){const t=TPL[cur],st=state(),K=knownOf(t),E=envOf(t,P),D=dimsOf(t),vNames=t.vars.map(v=>v[0]);
-  const m={kind:t.kind,errs:[]};
-  m.f=tp(st.f,K);
-  if(m.f.err)m.errs.push(['Integrand',m.f.err]);
-  if(t.kind==='der'){m.f.label='Expression';if(m.f.err)m.errs[0][0]='Expression';
-    m.v=t.v;
-    if(m.f.ast){const others=vNames.filter(x=>x!==t.v);
-      m.fx=fnOf(m.f.ast,E,t.v);
-      try{m.dim=dimOf(m.f.ast,D).d;}catch(e){m.dimErr=e.message;}}
-    return m;}
-  m.lo=tp(st.lo,K);m.hi=tp(st.hi,K);m.pre=st.showPre?tp(st.pre,K):{empty:true};
-  if(m.lo.err)m.errs.push(['Lower limit',m.lo.err]);
-  if(m.hi.err)m.errs.push(['Upper limit',m.hi.err]);
-  if(m.pre.err)m.errs.push(['Outside term',m.pre.err]);
-  let v=st.v.trim();const am=v.match(/^(theta|omega|pi)$/);if(am)v=ALIAS[am[1]];
-  m.v=v;m.vOk=vNames.includes(v);
-  if(v&&!m.vOk)m.errs.push(['d□',`“${v}” isn’t one of the coordinates (${vNames.join(', ')}).`]);
-  const lim=(fld,name)=>{if(!fld.ast)return null;if(hasSym(fld.ast,vNames)){m.errs.push([name,'A limit can only use the given quantities and numbers, not a coordinate.']);return null;}
-    try{const x=ev(fld.ast,E);if(!isFinite(x)){m.errs.push([name,'This limit doesn’t give a finite number.']);return null;}return x;}catch(e){m.errs.push([name,e.message]);return null;}};
-  m.loV=lim(m.lo,'Lower limit');m.hiV=lim(m.hi,'Upper limit');
-  m.preV=0;
-  if(m.pre.ast){if(hasSym(m.pre.ast,vNames))m.errs.push(['Outside term','A term outside the integral can’t use a coordinate.']);else{try{m.preV=ev(m.pre.ast,E);}catch(e){m.errs.push(['Outside term',e.message]);m.preV=NaN;}}}
-  if(m.f.ast&&m.vOk){m.fx=fnOf(m.f.ast,E,v);
-    try{m.fx(m.loV!=null?m.loV:0.5);}catch(e){if(e.user){m.errs.push(['Integrand',`${e.message} Only ${v} changes inside this integral.`]);m.fx=null;}}}
-  if(m.fx&&m.loV!=null&&m.hiV!=null){
-    let I=NaN;try{I=simpson(m.fx,m.loV,m.hiV,600);}catch(e){}
-    if(!isFinite(I)){let bad=null;for(let i=0;i<=200;i++){const x=m.loV+(m.hiV-m.loV)*i/200;let y;try{y=m.fx(x);}catch(e){y=NaN;}if(!isFinite(y)){bad=x;break;}}
-      m.errs.push(['Integrand',bad!=null?`It has no finite value at ${v} = ${fmt(bad)} (dividing by zero, or a root or log of a negative number?).`:'It doesn’t give a finite total between these limits.']);}
-    else m.total=m.preV+I;}
-  if(m.f.ast&&m.vOk){try{m.strip=addd(dimOf(m.f.ast,D).d,D[v]);
-      if(m.lo.ast)m.loD=dimOf(m.lo.ast,D);if(m.hi.ast)m.hiD=dimOf(m.hi.ast,D);if(m.pre.ast)m.preD=dimOf(m.pre.ast,D).d;}catch(e){m.dimErr=e.message;}}
-  return m;}
+    water:g('--water'),metal:g('--metal'),hot:g('--hot'),olive:g('--olive'),good:g('--good'),bad:g('--bad'),paper:g('--paper')};}
 
 /* ---------- canvas helpers ---------- */
 function prep(cv){const W=cv.clientWidth||300,H=cv.clientHeight||260,d=window.devicePixelRatio||1;
@@ -571,7 +737,7 @@ function niceTicks(a,b,n){const span=b-a;if(!(span>0))return [a];const s0=span/n
   const t=[];for(let v=Math.ceil(a/step-1e-9)*step;v<=b+step*1e-9;v+=step)t.push(Math.abs(v)<step*1e-9?0:v);return t;}
 
 /* ---------- plots ---------- */
-function plot(cv,o){const {g,W,H}=prep(cv),c=colors(),L=62,R=16,T=26,B=34;
+function plot(cv,o){const {g,W,H}=prep(cv),c=colors(),L=62,R=16,T=o.legend?44:26,B=34;
   if(o.msg){txt(g,o.msg,W/2,H/2,c.ink3,'center',13);return;}
   let [x0,x1]=o.xr;if(x0>x1)[x0,x1]=[x1,x0];if(!(x1>x0))x1=x0+1;
   const N=300,vals=[];
@@ -602,12 +768,25 @@ function plot(cv,o){const {g,W,H}=prep(cv),c=colors(),L=62,R=16,T=26,B=34;
   if(o.probe!=null&&isFinite(o.probe)){line(g,X(o.probe),T,X(o.probe),H-B,c.ink2,1,[4,4]);}
   (o.pts||[]).forEach(p=>{if(!isFinite(p.y))return;g.fillStyle=p.col;g.beginPath();g.arc(X(p.x),Y(p.y),4.5,0,7);g.fill();g.strokeStyle=c.panel;g.lineWidth=1.5;g.stroke();});
   g.restore();
-  txt(g,o.yl||'',L,12,c.ink2,'left',12);txt(g,o.xl||'',W-R,H-8,c.ink2,'right',12);
-  if(o.legend){let x=W-R;for(let i=o.legend.length-1;i>=0;i--){const [lab,col]=o.legend[i];g.font='12px "IBM Plex Sans",sans-serif';const w=g.measureText(lab).width;txt(g,lab,x,12,c.ink2,'right',12);line(g,x-w-22,12,x-w-6,12,col,2.4);x-=w+32;}}}
+  txt(g,fitT(g,'↑ '+(o.yl||''),W-16),8,12,c.ink,'left',12);txt(g,fitT(g,(o.xl||'')+' →',W-L-R),W-R,H-8,c.ink,'right',12);
+  if(o.legend){let x=W-R;for(let i=o.legend.length-1;i>=0;i--){const [lab,col]=o.legend[i];g.font='12px "IBM Plex Sans",sans-serif';const w=g.measureText(lab).width;txt(g,lab,x,30,c.ink2,'right',12);line(g,x-w-22,30,x-w-6,30,col,2.4);x-=w+32;}}}
 
 /* ---------- scenes ---------- */
 function stars(g,W,H,c,seed){const r=mulberry(seed);g.fillStyle=c.ink3;for(let i=0;i<45;i++){g.globalAlpha=0.25+0.5*r();g.fillRect(r()*W,r()*H,1.4,1.4);}g.globalAlpha=1;}
 function rock(g,x,y,rad,c){g.fillStyle=c.metal;g.strokeStyle=c.ink2;g.lineWidth=1.2;g.beginPath();for(let i=0;i<9;i++){const a=i/9*Math.PI*2,rr=rad*(0.78+0.22*Math.sin(i*2.7+1));g.lineTo(x+rr*Math.cos(a),y+rr*Math.sin(a));}g.closePath();g.fill();g.stroke();}
+function iconCar(g,cx,yr,c){g.fillStyle=c.acc;g.beginPath();g.moveTo(cx,yr-6);g.lineTo(cx+56,yr-6);g.lineTo(cx+56,yr-18);g.lineTo(cx+40,yr-30);g.lineTo(cx+14,yr-30);g.lineTo(cx+4,yr-18);g.lineTo(cx,yr-18);g.closePath();g.fill();
+  g.fillStyle=c.ink;[cx+12,cx+44].forEach(wx=>{g.beginPath();g.arc(wx,yr-5,6,0,7);g.fill();});}
+function iconBike(g,x,yr,c){g.strokeStyle=c.acc;g.lineWidth=2.4;[x+8,x+44].forEach(wx=>{g.beginPath();g.arc(wx,yr-10,10,0,7);g.stroke();});
+  g.beginPath();g.moveTo(x+8,yr-10);g.lineTo(x+22,yr-28);g.lineTo(x+38,yr-28);g.lineTo(x+44,yr-10);g.moveTo(x+22,yr-28);g.lineTo(x+28,yr-10);g.lineTo(x+8,yr-10);g.stroke();
+  g.fillStyle=c.ink;g.beginPath();g.arc(x+26,yr-44,6,0,7);g.fill();line(g,x+26,yr-38,x+24,yr-30,c.ink,3);}
+function iconTank(g,x,yr,c){g.fillStyle=c.ink2;g.beginPath();const r=7;g.moveTo(x+r,yr-15);g.lineTo(x+76-r,yr-15);g.arc(x+76-r,yr-r-1,r,-Math.PI/2,Math.PI/2);g.lineTo(x+r,yr-1);g.arc(x+r,yr-r-1,r,Math.PI/2,Math.PI*1.5);g.fill();
+  g.fillStyle=c.metal;for(let i=0;i<6;i++){g.beginPath();g.arc(x+9+i*11.6,yr-8,4,0,7);g.fill();}
+  g.fillStyle=c.olive;g.beginPath();g.moveTo(x-2,yr-15);g.lineTo(x+80,yr-15);g.lineTo(x+74,yr-25);g.lineTo(x+4,yr-25);g.closePath();g.fill();
+  g.beginPath();g.moveTo(x+22,yr-25);g.lineTo(x+56,yr-25);g.lineTo(x+52,yr-36);g.lineTo(x+26,yr-36);g.closePath();g.fill();
+  line(g,x+56,yr-31,x+98,yr-31,c.olive,3.5);}
+function iconShell(g,x,y,c){g.fillStyle=c.ink2;g.fillRect(x,y-4,16,8);g.beginPath();g.moveTo(x+16,y-4);g.lineTo(x+26,y);g.lineTo(x+16,y+4);g.closePath();g.fill();}
+function iconDrone(g,x,y,c,col){g.strokeStyle=col||c.ink2;g.lineWidth=2;line(g,x-11,y-11,x+11,y+11,col||c.ink2,2.5);line(g,x-11,y+11,x+11,y-11,col||c.ink2,2.5);
+  [[-11,-11],[11,11],[-11,11],[11,-11]].forEach(([a,b])=>{g.beginPath();g.arc(x+a,y+b,5,0,7);g.stroke();});}
 const SCN={
 rod(g,W,H,P,st,c){const L=P.L,x0=36,x1=W-36,y=H*0.48,sx=x=>x0+(x1-x0)*x/L,h0=14,h1=14*Math.sqrt(P['λ1']/P['λ0']);
   g.fillStyle=c.metal;g.beginPath();g.moveTo(x0,y-h0);g.lineTo(x1,y-h1);g.lineTo(x1,y+h1);g.lineTo(x0,y+h0);g.closePath();g.fill();g.strokeStyle=c.ink2;g.lineWidth=1.5;g.stroke();
@@ -716,7 +895,8 @@ rocket(g,W,H,P,st,c){stars(g,W,H,c,7);const m1=P.m0-P.q*P.T,xT=P.u*(P.T-(m1/P.q)
   const ax=x0+xT*s;g.strokeStyle=c.ref;g.setLineDash([3,3]);g.lineWidth=1.2;g.beginPath();g.arc(ax,y,16,0,7);g.stroke();g.setLineDash([]);
   rock(g,ax+6,y-52,12,c);arrow(g,ax+6,y-36,ax+2,y-20,c.ink3,1.2,5);
   txt(g,'engine cut-off point',ax,y+30,c.ref,'center',11);
-  txt(g,t<=P.T?'burning':'coasting',px,y-22,c.ink2,'center',11);},
+  txt(g,t<=P.T?'burning':'coasting',px,y-22,c.ink2,'center',11);
+  if(st.ghost){const cl=clamp(x0+st.ghost.user*s,x0,W-14);line(g,cl,y-40,cl,y+40,c.ref,1.5,[4,3]);txt(g,'your answer',cl,y+52,c.ref,'center',11);}},
 track(g,W,H,P,st,c){stars(g,W,H,c,3);const xT=TPL.find(z=>z.id==='track').ans.f(P),xs=P.x0*0.85,xe=Math.max(xT,P.x0+P.v0*P.T)*1.04,X=v=>40+(v-xs)/(xe-xs)*(W-70),y=H*0.5;
   g.fillStyle=c.ink2;g.beginPath();g.moveTo(14,y+12);g.lineTo(26,y-6);g.lineTo(38,y+12);g.closePath();g.fill();txt(g,'radar',26,y+26,c.ink3,'center',11);
   line(g,40,y,W-20,y,c.ink3,1,[2,5]);
@@ -724,211 +904,589 @@ track(g,W,H,P,st,c){stars(g,W,H,c,3);const xT=TPL.find(z=>z.id==='track').ans.f(
   g.strokeStyle=c.ink3;g.lineWidth=1.2;g.setLineDash([3,3]);g.beginPath();g.arc(X(xn),y,11,0,7);g.stroke();g.setLineDash([]);
   txt(g,'straight-line guess',X(xn),y+30,c.ink3,'center',11);
   rock(g,X(xt),y,11,c);txt(g,'asteroid',X(xt),y-26,c.ink2,'center',11);
-  line(g,X(P.x0),y+44,X(P.x0),y+56,c.ink3,1);txt(g,'first tracked',X(P.x0),y+66,c.ink3,'center',11);},
-los(g,W,H,P,st,c){stars(g,W,H,c,11);const cx=W/2,cy=H-26,Dpx=H*0.62,s=Dpx/P.D,yP=cy-Dpx,t=clamp(st.x,st.dom[0],st.dom[1]),tx=cx+P.u*t*s;
+  line(g,X(P.x0),y+44,X(P.x0),y+56,c.ink3,1);txt(g,'first tracked',X(P.x0),y+66,c.ink3,'center',11);
+  if(st.ghost){const gx=clamp(X(st.ghost.user),20,W-20);line(g,gx,y-30,gx,y+30,c.ref,1.5,[4,3]);txt(g,'your aim',gx,y-40,c.ref,'center',11);}},
+los(g,W,H,P,st,c){stars(g,W,H,c,11);const cx=W/2,cy=H-26,s=Math.min((H*0.62)/P.D,(W*0.45)/(3*P.D)),Dpx=P.D*s,yP=cy-Dpx,t=clamp(st.x,st.dom[0],st.dom[1]),tx=cx+P.u*t*s;
   line(g,0,yP,W,yP,c.ink3,1,[2,5]);txt(g,'asteroid path',8,yP-10,c.ink3,'left',11);
   line(g,cx,cy,cx,yP,c.ink3,1,[3,3]);txt(g,'D',cx+6,(cy+yP)/2,c.ink3,'left',13,true);
   line(g,cx,cy,tx,yP,c.acc,2);
   const th=Math.atan(P.u*t/P.D);g.strokeStyle=c.acc;g.lineWidth=1.5;g.beginPath();g.arc(cx,cy,34,-Math.PI/2,-Math.PI/2+th,th<0);g.stroke();
   txt(g,'θ',cx+44*Math.sin(th/2)+(th>=0?4:-12),cy-44*Math.cos(th/2),c.acc,'left',14,true);
   rock(g,tx,yP,10,c);arrow(g,tx+14,yP,tx+40,yP,c.ink2,1.5,5);
-  g.fillStyle=c.ink2;g.beginPath();g.moveTo(cx-12,cy+12);g.lineTo(cx,cy-4);g.lineTo(cx+12,cy+12);g.closePath();g.fill();}
+  g.fillStyle=c.ink2;g.beginPath();g.moveTo(cx-12,cy+12);g.lineTo(cx,cy-4);g.lineTo(cx+12,cy+12);g.closePath();g.fill();},
+mover(g,W,H,P,st,c,t){const end=t.posEnd(P),ic=t.icon,x0=34,x1=W-30,lead=ic==='tank'?100:ic==='shell'?28:58,s=(x1-x0-lead)/(end*1.04),yr=ic==='shell'?H*0.5:H*0.66;
+  const tt=st.dom?clamp(st.x,st.dom[0],st.dom[1]):clamp(st.x,0,1e9),px=x0+t.pos(P,tt)*s;
+  if(ic==='shell'){line(g,0,H-24,W,H-24,c.ink3,1.5);g.strokeStyle=c.ink3;g.setLineDash([2,5]);g.lineWidth=1.2;g.beginPath();g.moveTo(x0,yr);g.lineTo(px,yr);g.stroke();g.setLineDash([]);
+    g.fillStyle=c.olive;g.fillRect(x0-24,H-40,22,16);line(g,x0-6,H-36,x0+8,H-50,c.olive,4);}
+  else{g.fillStyle=c.metal;g.globalAlpha=0.32;g.fillRect(0,yr,W,28);g.globalAlpha=1;for(let x=0;x<W;x+=34)line(g,x,yr+14,x+16,yr+14,c.panel,2);}
+  line(g,x0,yr-62,x0,yr+(ic==='shell'?20:40),c.ink3,1,[3,3]);txt(g,'start',x0+4,yr-68,c.ink3,'left',11);
+  if(ic==='car')iconCar(g,px,yr,c);else if(ic==='bike')iconBike(g,px,yr,c);else if(ic==='tank')iconTank(g,px,yr,c);else iconShell(g,px,yr,c);
+  if(ic!=='shell'&&px-x0>40)bracketH(g,yr+40,x0,px,c.acc);
+  if(ic!=='shell'&&px-x0>60)txt(g,'distance so far',(x0+px)/2,yr+54,c.acc,'center',11);
+  if(st.ghost){const gx=x0+st.ghost.user*s,cl=clamp(gx,x0-10,W-40);g.globalAlpha=0.38;if(ic==='car')iconCar(g,cl,yr,c);else if(ic==='bike')iconBike(g,cl,yr,c);else if(ic==='tank')iconTank(g,cl,yr,c);else iconShell(g,cl,yr,c);g.globalAlpha=1;
+    txt(g,gx>W-40?'your answer (further →)':gx<x0-10?'(← your answer)':'your answer',clamp(cl+24,70,W-70),yr-(ic==='shell'?22:ic==='tank'?50:48),c.ref,'center',11);}},
+battery(g,W,H,P,st,c){const bw=Math.min(220,W*0.48),bh=78,bx=W*0.5-bw/2+34,by=H*0.5-bh/2,t=clamp(st.x,0,P.T),E=P.P0*(t-t*t/(2*P.T)),f=E/(P.P0*P.T/2),Pw=P.P0*(1-t/P.T);
+  g.fillStyle=c.good;g.globalAlpha=0.65;g.fillRect(bx+4,by+4,(bw-8)*f,bh-8);g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2;g.strokeRect(bx,by,bw,bh);g.fillStyle=c.ink2;g.fillRect(bx+bw,by+bh*0.32,8,bh*0.36);
+  line(g,10,by+bh/2,bx,by+bh/2,c.ink3,2);
+  if(Pw>0.01*P.P0)arrow(g,18,by-16,bx-8,by-16,c.acc,1.5+6*Pw/P.P0,9);
+  txt(g,'power flowing in',18,by-36,c.acc,'left',11);txt(g,'energy stored so far',bx+bw/2,by+bh+18,c.ink2,'center',12);},
+pool(g,W,H,P,st,c){const t=clamp(st.x,st.dom[0],st.dom[1]),h=Math.max(0,P.h0-P.k*t),pw=Math.min(W*0.6,300),px=W*0.5-pw/2,yb=H-30,s=(yb-30)/(P.h0*1.12);
+  g.fillStyle=c.water;g.globalAlpha=0.6;g.fillRect(px,yb-h*s,pw,h*s);g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2.5;g.beginPath();g.moveTo(px,yb-P.h0*1.08*s);g.lineTo(px,yb);g.lineTo(px+pw,yb);g.lineTo(px+pw,yb-P.h0*1.08*s);g.stroke();
+  line(g,px,yb-P.h0*s,px+pw,yb-P.h0*s,c.ink3,1,[3,3]);txt(g,'start level',px+pw+6,yb-P.h0*s,c.ink3,'left',11);
+  line(g,px+2,yb-h*s,px+pw-2,yb-h*s,c.acc,2.5);
+  line(g,px+pw*0.8,yb,px+pw*0.8,yb+12,c.ink2,4);arrow(g,px+pw*0.8+12,yb+6,px+pw*0.8+40,yb+6,c.ink2,2);txt(g,'drain',px+pw*0.8+44,yb+6,c.ink3,'left',11);
+  line(g,px-14,yb-h*s,px-14,yb,c.ink3,1);txt(g,'h',px-20,yb-h*s/2,c.ink3,'right',13,true);},
+recoil(g,W,H,P,st,c){const tau=P['τ'],t=clamp(st.x,0,tau),F=P.F0*(1-t/tau)**2,gy=H*0.58,gx=W*0.40;
+  line(g,10,gy+32,W-10,gy+32,c.ink3,1.5);
+  line(g,gx,gy+12,gx-86,gy+32,c.ink2,5);
+  g.strokeStyle=c.ink2;g.lineWidth=3;g.beginPath();g.arc(gx,gy+12,19,0,7);g.stroke();
+  g.fillStyle=c.olive;g.fillRect(gx-28,gy-14,Math.min(160,W*0.45),10);g.fillRect(gx-40,gy-21,24,24);
+  const mx=gx-28+Math.min(160,W*0.45);
+  if(t<tau*0.6){g.fillStyle=c.hot;g.globalAlpha=1-t/(tau*0.6);g.beginPath();g.arc(mx+10,gy-9,14,0,7);g.fill();g.globalAlpha=1;}
+  if(F>0.005*P.F0)arrow(g,gx-48,gy-9,gx-48-Math.max(8,(gx-70)*F/P.F0),gy-9,c.acc,3);
+  txt(g,'push on the barrel',gx-50,gy-36,c.acc,'right',11);txt(g,'muzzle',mx,gy-30,c.ink3,'center',11);},
+barrel(g,W,H,P,st,c){const L=P.L0+P.Lb,x0=28,s=(W-80)/L,y=H*0.5,x=clamp(st.x,0,P.Lb),sp=x0+(P.L0+x)*s,F=P.F0*P.L0/(P.L0+x);
+  g.fillStyle=c.hot;g.globalAlpha=0.12+0.5*P.L0/(P.L0+x);g.fillRect(x0,y-12,sp-x0,24);g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2.5;g.beginPath();g.moveTo(x0+L*s,y-14);g.lineTo(x0,y-14);g.lineTo(x0,y+14);g.lineTo(x0+L*s,y+14);g.stroke();
+  g.fillStyle=c.ink2;g.fillRect(sp,y-10,20,20);g.beginPath();g.moveTo(sp+20,y-10);g.lineTo(sp+32,y);g.lineTo(sp+20,y+10);g.closePath();g.fill();
+  arrow(g,sp+36,y-28,sp+36+Math.max(8,60*F/P.F0),y-28,c.acc,2.5);txt(g,'push',sp+36,y-42,c.acc,'left',11);
+  txt(g,'expanding gas',x0+6,y+30,c.hot,'left',11);txt(g,'muzzle',x0+L*s,y+30,c.ink3,'right',11);
+  line(g,x0+P.L0*s,y+40,sp,y+40,c.acc,2);txt(g,'x',(x0+P.L0*s+sp)/2,y+52,c.acc,'center',13,true);},
+drone(g,W,H,P,st,c){const cx=W/2,cy=H-26,s=Math.min((H*0.6)/P.D,(W*0.45)/(4*P.D)),yP=cy-P.D*s,t=clamp(st.x,st.dom[0],st.dom[1]),tx=cx+P.u*t*s;
+  line(g,0,yP,W,yP,c.ink3,1,[2,5]);txt(g,'drone path',8,yP-12,c.ink3,'left',11);
+  line(g,cx,cy,cx,yP,c.ink3,1,[3,3]);txt(g,'D',cx+6,(cy+yP)/2,c.ink3,'left',13,true);
+  line(g,cx,cy,tx,yP,c.acc,2);txt(g,'r',(cx+tx)/2+(tx>=cx?8:-14),(cy+yP)/2,c.acc,'left',14,true);
+  iconDrone(g,tx,yP,c);arrow(g,tx+18,yP+16,tx+42,yP+16,c.ink3,1.5,5);
+  g.strokeStyle=c.ink2;g.lineWidth=2.5;g.beginPath();g.arc(cx,cy+2,12,Math.PI*1.15,Math.PI*1.85);g.stroke();line(g,cx,cy-4,cx,cy+12,c.ink2,2.5);txt(g,'radar',cx+16,cy+6,c.ink3,'left',11);},
+sub(g,W,H,P,st,c){const t=clamp(st.x,st.dom[0],st.dom[1]),Tt=st.dom[1],z=P.Z*(1-Math.cos(P['ω']*t))/2,ys=26,s=(H-64)/P.Z,X=tt=>44+(W-150)*(tt/Tt),Y=zz=>ys+zz*s+14,x=X(t),y=Y(z);
+  g.fillStyle=c.water;g.globalAlpha=0.4;g.fillRect(0,ys,W,H-ys);g.globalAlpha=1;line(g,0,ys,W,ys,c.ink2,1.5);txt(g,'surface',8,ys-10,c.ink3,'left',11);
+  g.strokeStyle=c.ink3;g.setLineDash([2,5]);g.lineWidth=1.2;g.beginPath();for(let i=0;i<=40;i++){const tt=t*i/40,zz=P.Z*(1-Math.cos(P['ω']*tt))/2;i?g.lineTo(X(tt),Y(zz)):g.moveTo(X(tt),Y(zz));}g.stroke();g.setLineDash([]);
+  line(g,x,ys,x,y-12,c.ink3,1,[3,3]);txt(g,'z',x+6,(ys+y)/2,c.ink3,'left',13,true);
+  g.fillStyle=c.ink2;g.beginPath();g.ellipse(x+30,y,34,9,0,0,7);g.fill();g.fillRect(x+20,y-17,14,10);
+  const len=5+18*z/P.Z;[[x+30,y-9-len,x+30,y-10],[x+30,y+9+len,x+30,y+10],[x+64+len,y,x+65,y]].forEach(a=>arrow(g,a[0],a[1],a[2],a[3],c.acc,1.8,5));
+  txt(g,'pressure',x+70+len,y-14,c.acc,'left',11);},
+intercept(g,W,H,P,st,c){stars(g,W,H,c,5);const x0=30,x1=W-30,s=(x1-x0)/P.D0,y=H*0.55,t=Math.max(0,st.x),xi=P.j*t**3/6,xd=P.D0-P.u*t,pi=x0+xi*s,pd=x0+xd*s;
+  line(g,x0,y,x1,y,c.ink3,1,[2,5]);
+  g.fillStyle=c.olive;g.fillRect(x0-18,y+10,24,12);txt(g,'you',x0-6,y+34,c.ink3,'center',11);
+  if(t>0){g.fillStyle=c.hot;g.beginPath();g.moveTo(pi-10,y-3);g.lineTo(pi-22,y);g.lineTo(pi-10,y+3);g.closePath();g.fill();}
+  g.fillStyle=c.acc;g.fillRect(pi-10,y-3,18,6);g.beginPath();g.moveTo(pi+8,y-3);g.lineTo(pi+16,y);g.lineTo(pi+8,y+3);g.closePath();g.fill();
+  iconDrone(g,pd,y-2,c);arrow(g,pd-18,y-24,pd-44,y-24,c.ink3,1.5,5);
+  if(pd-pi>30){bracketH(g,y+44,pi,pd,c.acc);txt(g,'gap',(pi+pd)/2,y+58,c.acc,'center',12);}else txt(g,'they have met',(pi+pd)/2,y+52,c.acc,'center',12);}
 };
 
-/* ---------- rendering ---------- */
-function renderList(){const el=$('#list');el.innerHTML=TIERS.map(tr=>`<div class="tier"><h4>${tr}</h4><div class="plist">${TPL.map((t,i)=>t.tier!==tr?'':
-  `<button class="pbtn" type="button" data-i="${i}" aria-current="${i===cur}"><span class="k">${t.kind==='int'?'∫':'d'}</span><span>${t.title}</span>${solved.has(t.id)?'<span class="ok" aria-label="solved">✓</span>':''}</button>`).join('')}</div></div>`).join('');
-  el.querySelectorAll('.pbtn').forEach(b=>b.onclick=()=>loadProblem(+b.dataset.i));}
-function uLab(u){const n=uName(u);return n==='no units'?'—':n;}
-function valCell(s){const v=P[s[0]];return `${fmt(v,4)} ${s[1]&&!zerod(s[1])?uName(s[1]):''}`;}
-function renderProblem(){const t=TPL[cur],st=state();
-  $('#p-tier').textContent=t.tier;const k=$('#p-kind');k.textContent=t.kind==='int'?'Integral':'Derivative';k.className='tag '+t.kind;
-  $('#p-title').textContent=t.title;$('#p-text').innerHTML=t.text;
-  $('#p-given').innerHTML=t.sym.map(s=>`<tr><td class="s">${S(s[0])}</td><td class="d">${s[2]}</td><td class="v">${valCell(s)}</td></tr>`).join('');
-  $('#p-phys').innerHTML=t.phys.map(p=>`<li>${p}</li>`).join('');
-  $('#p-vars-h').textContent=t.kind==='int'?'Coordinates you can slice along':'Variable';
-  $('#p-vars').innerHTML=t.vars.map(v=>`<tr><td class="s">${S(v[0])}</td><td class="d">${v[2]}</td><td class="v">${uLab(v[1])}</td></tr>`).join('');
-  const chip=(html,ins,cls,title)=>`<button class="chip ${cls}" type="button" draggable="true" data-ins="${ins}" data-cls="${cls}" title="${title}">${html}</button>`;
-  const fns=[['√','√(','square root'],['sin','sin(','sine'],['cos','cos(','cosine'],['ln','ln(','natural log'],['exp','exp(','e to the power'],['atan','atan(','inverse tangent'],['π','π','pi']];
-  if(t.kind==='int'||t.id==='brake')fns.push(['∫ nested','∫(','an integral inside the integral: ∫(integrand, variable, from, to)']);
-  $('#palette').innerHTML=
-    `<div class="pgroup"><span class="gl">Quantities</span>${t.sym.map(s=>chip(S(s[0]),s[0],'sym',s[2])).join('')}</div>`+
-    `<div class="pgroup"><span class="gl">${t.kind==='int'?'Coordinates':'Variable'}</span>${t.vars.map(v=>chip(S(v[0]),v[0],'var',v[2])).join('')}</div>`+
-    `<div class="pgroup"><span class="gl">Functions</span>${fns.map(f=>chip(f[0],f[1],'fn',f[2])).join('')}</div>`;
-  $('#help').innerHTML=t.kind==='int'
-    ?`Drag a block into a field, or click it to insert where your cursor is. Type the operators, numbers and brackets yourself: <code>+ − * / ^ ( )</code>. Put the coordinate you slice along after <i class="mv">d</i>. A nested integral is written <code>∫(integrand, variable, from, to)</code>.`
-    :`Drag a block into the field, or click it to insert where your cursor is. Type the operators, numbers and brackets yourself: <code>+ − * / ^ ( )</code>.`;
-  const eq=$('#eq');
-  if(t.kind==='int'){
-    eq.innerHTML=`<span class="lhs">${t.ans.lhs} =</span><span id="pre-w" ${st.showPre?'':'hidden'} style="display:inline-flex;align-items:center;gap:8px"><input id="in-pre" class="fx pre" placeholder="outside term" autocomplete="off" spellcheck="false" aria-label="Term outside the integral"><span class="plus">+</span></span>`+
-      `<span class="intsign" aria-hidden="true">∫</span><span class="lims"><input id="in-hi" class="lim" placeholder="to" autocomplete="off" spellcheck="false" aria-label="Upper limit"><input id="in-lo" class="lim" placeholder="from" autocomplete="off" spellcheck="false" aria-label="Lower limit"></span>`+
-      `<input id="in-f" class="fx grow" placeholder="integrand" autocomplete="off" spellcheck="false" aria-label="Integrand"><span class="dee">d</span><input id="in-v" class="var" placeholder="?" autocomplete="off" spellcheck="false" aria-label="Integration variable">`;
-    $('#b-pre').hidden=false;$('#b-pre').textContent=st.showPre?'− Remove the outside term':'+ Add a term outside the integral';
+/* ================= app ================= */
+const EXTRA={
+drive:{card:[['final','Distance covered in this short moment']],ends:['the start','the end']},
+bike:{card:[['final','Distance covered in this short moment']],ends:['the start','the end']},
+charge:{card:[['final','Energy delivered in this short moment']],ends:['the start','the end']},
+rod:{card:[['lam','Mass per metre at this spot'],['final','Mass of this piece']],ends:['the thin end','the thick end']},
+lift:{card:[['final','Height gained in this short moment']],ends:['the start of the ride','the end of the ride']},
+brake:{card:[['speed','Speed at this moment'],['final','Distance covered in this short moment']],ends:['the start of braking','the stop']},
+pump:{card:[['vol','Volume of this slice'],['wt','Weight of this slice'],['lift','How far this slice is lifted'],['final','Work to lift this slice']],ends:['the bottom of the tank','the top of the tank']},
+dam:{card:[['depth','Depth of this strip below the surface'],['press','Water pressure at that depth'],['area','Area of this strip'],['final','Force on this strip']],ends:['the floor','the top of the gate']},
+spring:{card:[['force','Force needed at this stretch'],['final','Work for this short stretch']],ends:['the start of the stretch','the end of the stretch']},
+orbit:{card:[['force','Gravity at this distance'],['final','Work for this short climb']],ends:['the ground','the target altitude']},
+disc:{card:[['area','Area of this thin ring'],['mass','Mass of this ring'],['final','This ring’s moment of inertia']],ends:['the centre','the rim']},
+rocket:{card:[['speed','Speed at this moment'],['final','Distance covered in this short moment']],ends:['ignition','engine cut-off']},
+track:{card:[['speed','Speed at this moment'],['final','Distance covered in this short moment']],ends:['the start','the prediction time']},
+tank:{card:[['final','Distance covered in this short moment']],ends:['the start','the end']},
+recoil:{card:[['acc','Acceleration at this moment'],['final','Speed gained in this short moment']],ends:['the shot','the end of the push']},
+muzzle:{card:[['force','Push on the shell here'],['final','Work done over this short step']],ends:['the breech','the muzzle']},
+drag:{card:[['final','Distance covered in this short moment']],ends:['the start of the flight','the end of the flight']},
+gap:{card:[['close','Closing speed at this moment'],['final','Change in the gap in this short moment']],ends:['launch','the check time']},
+train:{ends:['the start','30 s in']},drain:{ends:['the start','the end']},ball:{ends:['the throw','the landing']},cone:{ends:['shallow water','a full tank']},
+lj:{ends:['atoms close together','atoms far apart']},los:{ends:['long before closest approach','long after it']},drone:{ends:['long before closest approach','long after it']},sub:{ends:['the start of the dive','the end of the dive']}};
+TPL.forEach(t=>Object.assign(t,EXTRA[t.id]||{}));
+const STEPKEYS=new Set();TPL.forEach(t=>(t.card||[]).forEach(c=>{if(c[0]!=='final')STEPKEYS.add(c[0]);}));
+{const base=symHTML;symHTML=function(n){return STEPKEYS.has(n)?`<span class="skey">${n}</span>`:base(n);};}
+
+let mode='prob',cur=0,sbCur=0,P=null,probe=0.5,nPieces=12,M=null,raf=0,play=null,playK=null,playP=null,showMath=false,lastField=null,opener=null,sbMap=null,sbPlay=null;
+const ST={},SBST={};
+let solved=new Set();try{solved=new Set(JSON.parse(localStorage.getItem('slicesum.solved')||'[]'));}catch(e){}
+function saveSolved(){try{localStorage.setItem('slicesum.solved',JSON.stringify([...solved]));}catch(e){}}
+function state(){const t=TPL[cur];return ST[t.id]||(ST[t.id]={steps:{},f:'',lo:'',hi:'',pre:'',showPre:false,hint:0,seed:1+Math.floor(Math.random()*1e9),fb:null,ghost:false,showSol:false,step:'read'});}
+function tp(str,K){if(!str||!str.trim())return {empty:true};try{const ast=parse(str,K);return ast?{ast}:{empty:true};}catch(e){return {err:e.user?e.message:'That can’t be read as math yet.'};}}
+function KK(t){const k=knownOf(t);if(t.kind==='int'){(t.card||[]).forEach(c=>{if(c[0]!=='final')k.add(c[0]);});t.vars.forEach(v=>k.add('d'+v[0]));}return k;}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function axU(u){return zerod(u)?'no units':uName(u);}
+function uLab(u){const n=uName(u);return n==='no units'?'':n;}
+function fitT(g,s,w){g.font='12px "IBM Plex Sans",sans-serif';if(g.measureText(s).width<=w)return s;while(s.length>4&&g.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…';}
+function lowFirst(s){return s.charAt(0).toLowerCase()+s.slice(1);}
+function reduceMotion(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
+
+/* ---------- reference ---------- */
+const REF={};
+function refOf(t){const key=t.id+':'+JSON.stringify(P);if(REF[t.id]&&REF[t.id].key===key)return REF[t.id];
+  const K=knownOf(t),E=envOf(t,P),r={key};
+  if(t.kind==='int'){r.v=t.sol.v;r.fx=fnOf(parse(t.sol.f,K),E,t.sol.v);r.lo=ev(parse(t.sol.lo,K),E);r.hi=ev(parse(t.sol.hi,K),E);r.ans=t.ans.f(P);r.pre=t.sol.pre?ev(parse(t.sol.pre,K),E):0;}
+  else{r.v=t.v;r.fx=fnOf(parse(t.sol.f,K),E,t.v);r.dom=t.dom(P);if(t.given)r.gx=fnOf(parse(t.given.f,K),E,t.v);}
+  REF[t.id]=r;return r;}
+function rng(m){const r=refOf(TPL[cur]);return (m&&m.loV!=null&&m.hiV!=null&&m.hiV!==m.loV)?[m.loV,m.hiV,true]:[r.lo,r.hi,false];}
+
+/* ---------- model ---------- */
+function buildModel(){const t=TPL[cur],st=state();return t.kind==='int'?buildInt(t,st):buildDer(t,st);}
+function buildDer(t,st){const K=knownOf(t),E=envOf(t,P),D=dimsOf(t),m={kind:'der',errs:[],v:t.v};
+  m.f=tp(st.f,K);if(m.f.err)m.errs.push(['Your formula',m.f.err]);
+  if(m.f.ast){m.fx=fnOf(m.f.ast,E,t.v);const d=t.dom(P);try{m.fx((d[0]+d[1])/2);}catch(e){if(e.user){m.errs.push(['Your formula',e.message]);m.fx=null;}}
+    try{m.dim=dimOf(m.f.ast,D).d;}catch(e){m.dimErr=e.message;}}
+  return m;}
+function buildInt(t,st){const K=KK(t),E=envOf(t,P),D=dimsOf(t),v=t.vars[0][0],dv='d'+v,m={kind:'int',v,dv,errs:[],steps:[]};
+  t.vars.forEach(x=>{D['d'+x[0]]=x[1];});
+  const keys=t.card.map(c=>c[0]),Dd=Object.assign({},D);
+  t.card.forEach(([k,label],i)=>{const f=tp(st.steps[k],K),s={k,label,empty:!!f.empty,ast:f.ast||null,err:f.err||null};
+    if(s.err)m.errs.push([label,s.err]);
+    if(s.ast&&hasSym(s.ast,keys.slice(i))){s.err='A box can only use the boxes above it.';m.errs.push([label,s.err]);s.ast=null;}
+    if(s.ast){try{s.dim=dimOf(s.ast,Dd).d;Dd[k]=s.dim;}catch(e){s.dimErr=e.message;if(!m.dimErr)m.dimErr=e.message;}}
+    m.steps.push(s);});
+  const fin=m.fin=m.steps[m.steps.length-1],emptyKeys=m.steps.filter(s=>!s.ast).map(s=>s.k);
+  if(fin.ast){if(m.steps.some(s=>s.ast&&hasSym(s.ast,emptyKeys)))m.errs.push(['Slice','You used a box that is still empty. Fill it in, or write that part out instead.']);
+    else m.slice=(x,h)=>{const e=Object.create(E);e[v]=x;e[dv]=h;for(const s of m.steps)if(s.ast)e[s.k]=ev(s.ast,e);return e.final;};}
+  m.lo=tp(st.lo,K);m.hi=tp(st.hi,K);m.pre=st.showPre?tp(st.pre,K):{empty:true};
+  if(m.lo.err)m.errs.push(['Start of the range',m.lo.err]);if(m.hi.err)m.errs.push(['End of the range',m.hi.err]);if(m.pre.err)m.errs.push(['Start value',m.pre.err]);
+  const bad=[...t.vars.map(x=>x[0]),...t.vars.map(x=>'d'+x[0]),...keys];
+  const lim=(fld,name)=>{if(!fld.ast)return null;if(hasSym(fld.ast,bad)){m.errs.push([name,'This can only use the given quantities and numbers.']);return null;}
+    try{const x=ev(fld.ast,E);if(!isFinite(x)){m.errs.push([name,'This doesn’t give a finite number.']);return null;}return x;}catch(e){m.errs.push([name,e.message]);return null;}};
+  m.loV=lim(m.lo,'Start of the range');m.hiV=lim(m.hi,'End of the range');m.preV=0;
+  if(m.pre.ast){const x=lim(m.pre,'Start value');m.preV=x==null?NaN:x;}
+  if(m.slice){const [a,b]=rng(m),span=b-a,xm=a+span*0.37,h=Math.abs(span)*1e-3||1e-3;let s1=NaN,s2=NaN;
+    try{s1=m.slice(xm,h);s2=m.slice(xm,2*h);}catch(e){if(e.user)m.errs.push(['Slice',`${e.message} Inside a slice, only ${v} and ${dv} change.`]);m.slice=null;}
+    if(m.slice&&isFinite(s1)&&isFinite(s2)){m.ratio=(Math.abs(s1)<1e-300&&Math.abs(s2)<1e-300)?2:s2/s1;m.lin=Math.abs(m.ratio-2)<1e-6;
+      if(m.lin){m.fx=x=>m.slice(x,1);
+        if(m.loV!=null&&m.hiV!=null){let I=NaN;try{I=simpson(m.fx,m.loV,m.hiV,600);}catch(e){}
+          if(!isFinite(I)){let badx=null;for(let i=0;i<=200;i++){const x=m.loV+(m.hiV-m.loV)*i/200;let y;try{y=m.fx(x);}catch(e){y=NaN;}if(!isFinite(y)){badx=x;break;}}
+            m.errs.push(['Slice',badx!=null?`It has no finite value at ${v} = ${fmt(badx)} (dividing by zero, or a root or log of a negative number?).`:'It doesn’t give a finite total over this range.']);}
+          else m.total=m.preV+I;}}}}
+  if(fin.ast&&fin.dim&&!m.dimErr){m.strip=fin.dim;m.fd=subd(fin.dim,D[v]);}
+  if(m.lo.ast){try{m.loD=dimOf(m.lo.ast,D);}catch(e){}}if(m.hi.ast){try{m.hiD=dimOf(m.hi.ast,D);}catch(e){}}if(m.pre.ast){try{m.preD=dimOf(m.pre.ast,D).d;}catch(e){}}
+  return m;}
+function piecesOf(m,N){if(!m||!m.slice||m.loV==null||m.hiV==null)return null;const dx=(m.hiV-m.loV)/N,out=[];
+  for(let i=0;i<N;i++){let p;try{p=m.slice(m.loV+(i+.5)*dx,dx);}catch(e){p=NaN;}out.push(p);}return out;}
+
+/* ---------- expression display helpers ---------- */
+function subst(n,map){if(!n)return n;switch(n.t){case 'sym':return map[n.n]?map[n.n]:n;case 'num':return n;case 'neg':return {t:'neg',a:subst(n.a,map)};
+  case 'bin':return {t:'bin',op:n.op,a:subst(n.a,map),b:subst(n.b,map),imp:n.imp};case 'fn':return {t:'fn',n:n.n,a:subst(n.a,map)};case 'int':return {t:'int',v:n.v,f:subst(n.f,map),lo:subst(n.lo,map),hi:subst(n.hi,map)};}return n;}
+function stripD(n,dv){if(n.t==='sym'&&n.n===dv)return {one:true};
+  if(n.t==='bin'&&n.op==='*'){const a=stripD(n.a,dv);if(a)return a.one?n.b:{t:'bin',op:'*',a,b:n.b};const b=stripD(n.b,dv);if(b)return b.one?n.a:{t:'bin',op:'*',a:n.a,b};return null;}
+  if(n.t==='bin'&&n.op==='/'){const a=stripD(n.a,dv);if(a)return a.one?{t:'bin',op:'/',a:{t:'num',v:1},b:n.b}:{t:'bin',op:'/',a,b:n.b};return null;}
+  if(n.t==='neg'){const a=stripD(n.a,dv);if(a)return a.one?{t:'num',v:-1}:{t:'neg',a};return null;}
+  return null;}
+function fullSlice(m){const map={};for(const s of m.steps){if(s.ast&&s.k!=='final')map[s.k]=subst(s.ast,map);}return m.fin.ast?subst(m.fin.ast,map):null;}
+function slot(){return '<span class="slot"></span>';}
+function intHTML(m){const t=TPL[cur];const full=m.fin.ast?fullSlice(m):null,st=stripD&&full?stripD(full,m.dv):null;
+  const body=full?(st&&!st.one?`${pp(st,1.5)} <i class="mv">d</i>${S(m.v)}`:pp(full,1.5)):slot();
+  return `${t.ans.lhs} = ${m.pre.ast?pp(m.pre.ast,1)+' + ':''}<span class="isig">∫</span><span class="ilim"><span>${m.hi.ast?pp(m.hi.ast):slot()}</span><span>${m.lo.ast?pp(m.lo.ast):slot()}</span></span>${body}`;}
+
+/* ---------- levels and drawers ---------- */
+function renderLevels(){const el=$('#levels');
+  el.innerHTML=`<div class="tier"><h4>Sandbox</h4><div class="plist">${SB.map((s,i)=>`<button class="pbtn" type="button" data-sb="${i}" aria-current="${mode==='sb'&&i===sbCur}"><span class="k">~</span><span>${s.title}</span></button>`).join('')}</div></div>`+
+    TIERS.map(tr=>`<div class="tier"><h4>${tr}</h4><div class="plist">${TPL.map((t,i)=>t.tier!==tr?'':`<button class="pbtn" type="button" data-i="${i}" aria-current="${mode==='prob'&&i===cur}"><span class="k">${t.kind==='int'?'∫':'d'}</span><span>${t.title}</span>${solved.has(t.id)?'<span class="ok" aria-label="solved">✓</span>':''}</button>`).join('')}</div></div>`).join('');
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeDrawers(true);loadProblem(+b.dataset.i);});
+  el.querySelectorAll('[data-sb]').forEach(b=>b.onclick=()=>{closeDrawers(true);loadSandbox(+b.dataset.sb);});}
+function openDrawer(id,btn){closeDrawers(true);opener=btn||document.activeElement;const d=$('#'+id);d.removeAttribute('inert');d.classList.add('open');$('#scrim').hidden=false;
+  if(id==='d-hints')renderHints();setTimeout(()=>{const f=d.querySelector('[data-close]');f&&f.focus();},40);}
+function closeDrawers(silent){$$('.drawer').forEach(d=>{d.classList.remove('open');d.setAttribute('inert','');});$('#scrim').hidden=true;if(!silent&&opener){try{opener.focus();}catch(e){}}opener=null;}
+
+/* ---------- problem rendering ---------- */
+function chipHTML(html,ins,cls,title){return `<button class="chip ${cls}" type="button" draggable="true" data-ins="${ins}" title="${title}">${html}</button>`;}
+function fnList(t){const solTxt=[t.sol.f,t.sol.pre||'',t.sol.lo||'',t.sol.hi||''].join(' ');
+  const fns=[['√','√(','square root',/√|sqrt/],['sin','sin(','sine',/(^|[^a])sin\(/],['cos','cos(','cosine',/cos\(/],['ln','ln(','natural log',/ln\(/],['exp','exp(','e to the power',/exp\(/],['atan','atan(','inverse tangent',/atan\(/],['π','π','pi',/π/]].filter(f=>f[3].test(solTxt)||(t.fx||[]).includes(f[0]));
+  if(t.vars.some(v=>v[0]==='s'))fns.push(['∫ nested','∫(','an integral inside the slice: ∫(what to add, variable, from, to)']);return fns;}
+function paletteHTML(t,forSlice){const fns=fnList(t);let h=`<div class="pgroup"><span class="gl">Quantities</span>${t.sym.map(s=>chipHTML(S(s[0]),s[0],'sym',s[2])).join('')}</div>`;
+  if(forSlice){const v=t.vars[0][0];
+    if(t.kind==='int'){h+=`<div class="pgroup"><span class="gl">The slice</span>${chipHTML(S(v),v,'var','where this slice sits: '+t.vars[0][2])}${chipHTML(`<i class="mv">d</i>${S(v)}`,'d'+v,'var','how thick this slice is')}${t.vars.slice(1).map(x=>chipHTML(S(x[0]),x[0],'var',x[2])).join('')}</div>`;
+      const ks=t.card.filter(c=>c[0]!=='final');if(ks.length)h+=`<div class="pgroup"><span class="gl">Your boxes</span>${ks.map(c=>chipHTML(c[0],c[0],'key',c[1])).join('')}</div>`;}
+    else h+=`<div class="pgroup"><span class="gl">Variable</span>${chipHTML(S(v),v,'var',t.vars[0][2])}</div>`;}
+  if(fns.length)h+=`<div class="pgroup"><span class="gl">Functions</span>${fns.map(f=>chipHTML(f[0],f[1],'fn',f[2])).join('')}</div>`;
+  return h;}
+function guideHTML(t){const gl=[];
+  if(t.kind==='int'){const mv=t.vars[0];gl.push(['You’re finding',`the total ${t.ans.name}, in ${uName(t.ans.u)}`]);gl.push(['Slice along',`${mv[2]} (${S(mv[0])})`]);gl.push(['Each slice adds',`a small piece of ${t.ans.name}. Adding up all the pieces gives the total.`]);}
+  else{gl.push(['You’re finding',`the ${t.ans.name}, in ${uName(t.ans.u)}, as a formula in ${S(t.v)}`]);gl.push(['How',t.given?`it’s how fast the ${t.given.name} changes as ${S(t.v)} changes, so take the derivative of the given formula`:`it’s a rate of change, so write the quantity as a formula and take its derivative`]);}
+  (t.guide||[]).forEach(x=>gl.push(x));return gl.map(([k,v])=>`<div><span class="gk">${k}</span><span>${v}</span></div>`).join('');}
+function bindField(el,key){const st=state();el.value=key.startsWith('s:')?(st.steps[key.slice(2)]||''):(st[key]||'');
+  el.addEventListener('input',()=>{const s=state();if(key.startsWith('s:'))s.steps[key.slice(2)]=el.value;else s[key]=el.value;if(s.fb||s.ghost){s.fb=null;s.ghost=false;renderFeedback();}schedule();});
+  el.addEventListener('focus',()=>{lastField=el;});}
+function bindChips(root){root.querySelectorAll('.chip').forEach(ch=>{ch.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',ch.dataset.ins);e.dataTransfer.effectAllowed='copy';});
+  ch.addEventListener('mousedown',e=>e.preventDefault());ch.addEventListener('click',()=>insertChip(ch.dataset.ins,ch.closest('section')));});}
+function insertChip(ins,sec){let el=lastField;if(!el||!sec||!sec.contains(el))el=sec?sec.querySelector('input.fx,input.lim'):null;if(!el)return;
+  const s=el.selectionStart??el.value.length,e=el.selectionEnd??s,before=el.value.slice(0,s),after=el.value.slice(e);let t=ins;if(/[\p{L}\p{N})]$/u.test(before))t=' '+t;
+  el.value=before+t+after;const pos=before.length+t.length;el.focus();try{el.setSelectionRange(pos,pos);}catch(_){}el.dispatchEvent(new Event('input'));}
+function renderProblem(){const t=TPL[cur],st=state();M=buildModel();
+  $('#h-tier').textContent=t.tier;const hk=$('#h-kind');hk.hidden=false;hk.textContent=t.kind==='int'?'Integral':'Derivative';hk.className='tag '+t.kind;$('#h-title').textContent=t.title;
+  $('#r-text').innerHTML=t.text;$('#r-guide').innerHTML=guideHTML(t);
+  $('#given-body').innerHTML=`<h3>Given</h3><table class="kv">${t.sym.map(s=>`<tr><td class="s">${S(s[0])}</td><td class="d">${s[2]}</td><td class="v">${fmt(P[s[0]],4)} ${uLab(s[1])}</td></tr>`).join('')}</table>`+
+    `<h3>Physics you can use</h3><ul class="phys">${t.phys.map(p=>`<li>${p}</li>`).join('')}</ul>`+
+    `<h3>${t.kind==='int'?'What you slice along':'What changes'}</h3><table class="kv">${t.vars.map(v=>`<tr><td class="s">${S(v[0])}</td><td class="d">${v[2]}</td><td class="v">${uLab(v[1])}</td></tr>`).join('')}</table>`+
+    `<button class="btn" type="button" id="b-new">New numbers</button>`;
+  $('#b-new').onclick=newNumbers;
+  const isInt=t.kind==='int';
+  $('#nx-read').textContent=isInt?'Next: build one slice':'Next: build the rate';
+  $('#nx-slice').textContent=isInt?'Next: add up the slices':'Next: watch it';
+  $('#lb-probe').textContent=isInt?'Move the slice':'Move along';
+  $('#lb-probe2').textContent=isInt?'Look at one piece':'Move along';
+  $('#w-n1').hidden=$('#w-n2').hidden=!isInt;$('#sum-int').hidden=!isInt;$('#m2-w').hidden=isInt||!t.given;
+  $('#pal-slice').innerHTML=paletteHTML(t,true);$('#pal-sum').innerHTML=isInt?paletteHTML(t,false):'';
+  if(isInt){const v=t.vars[0][0];
+    $('#card').innerHTML=`<p class="help">Each slice sits at ${S(v)} and is ${S('d'+v)} thick. ${t.card.length>1?`The top boxes are optional helpers: give a piece of the slice a value, then use its short name (like <span class="skey">${t.card[0][0]}</span>) in the boxes below. Or write everything straight into the last box.`:'Write what one slice adds in the box.'}</p>`+
+      t.card.map(([k,l])=>{const fin=k==='final';return `<div class="srow${fin?' fin':''}"><label for="st-${k}">${fin?`<b>This slice adds:</b> ${lowFirst(l)}`:`${l} <span class="skey">${k}</span>`}</label><div class="sin"><input id="st-${k}" class="fx" autocomplete="off" spellcheck="false"><span class="sval" id="sv-${k}"></span></div></div>`;}).join('');
+    t.card.forEach(([k])=>bindField($('#st-'+k),'s:'+k));
+    const finL=lowFirst(t.card[t.card.length-1][1]);
+    $('#sentence').innerHTML=`<span>Total ${t.ans.name}, ${t.ans.lhs} =</span><span id="pre-w" ${st.showPre?'':'hidden'} style="display:inline-flex;gap:8px;align-items:center"><input id="in-pre" class="fx pre" placeholder="start value" autocomplete="off" spellcheck="false" aria-label="Start value"><span>+</span></span><span>add up the <span class="pill">${finL.replace(/^this /,'')}</span> for every slice from ${S(v)} =</span><input id="in-lo" class="lim" placeholder="start" autocomplete="off" spellcheck="false" aria-label="Where the slices start"><span>to ${S(v)} =</span><input id="in-hi" class="lim" placeholder="end" autocomplete="off" spellcheck="false" aria-label="Where the slices end">`;
+    bindField($('#in-lo'),'lo');bindField($('#in-hi'),'hi');bindField($('#in-pre'),'pre');
+    $('#b-pre').textContent=st.showPre?'− Remove the start value':'+ Start from a value';
   }else{
-    eq.innerHTML=`<span class="lhs">${t.ans.lhs} =</span><input id="in-f" class="fx grow" placeholder="your expression" autocomplete="off" spellcheck="false" aria-label="Your expression">`;
-    $('#b-pre').hidden=true;}
-  const map={'in-f':'f','in-lo':'lo','in-hi':'hi','in-v':'v','in-pre':'pre'};
-  for(const id in map){const el=document.getElementById(id);if(!el)continue;el.value=st[map[id]]||'';
-    el.addEventListener('input',()=>{state()[map[id]]=el.value;schedule();});
-    el.addEventListener('focus',()=>{lastField=el;});}
-  const vin=$('#in-v');if(vin){vin.addEventListener('dragover',e=>e.preventDefault());vin.addEventListener('drop',e=>{e.preventDefault();vin.value=(e.dataTransfer.getData('text/plain')||'').trim();vin.dispatchEvent(new Event('input'));});}
-  lastField=$('#in-f');
-  document.querySelectorAll('.chip').forEach(ch=>{
-    ch.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',ch.dataset.ins);e.dataTransfer.effectAllowed='copy';});
-    ch.addEventListener('mousedown',e=>e.preventDefault());
-    ch.addEventListener('click',()=>insertChip(ch.dataset.ins));});
-  $('#fig-a').hidden=t.kind==='der'&&!t.given;
-  $('#fig-b').hidden=t.kind==='int';
-  $('#fig-b').classList.toggle('wide',!!t.given);
-  $('#sl-n-w').hidden=t.kind!=='int';
-  $('#sl-p-l').textContent=t.kind==='int'?'Move the slice':`Move along ${t.v}`;
-  renderFeedback();renderHints();renderList();}
-function insertChip(ins){const el=lastField||$('#in-f');if(!el)return;
-  if(el.id==='in-v'){el.value=ins;el.focus();el.dispatchEvent(new Event('input'));return;}
-  const s=el.selectionStart??el.value.length,e=el.selectionEnd??s,before=el.value.slice(0,s),after=el.value.slice(e);
-  let t=ins;if(/[\p{L}\p{N})]$/u.test(before))t=' '+t;
-  el.value=before+t+after;const pos=before.length+t.length;el.focus();try{el.setSelectionRange(pos,pos);}catch(_){}
-  el.dispatchEvent(new Event('input'));}
-function loadProblem(i){cur=i;const st=state();P=mkParams(TPL[cur],st.seed);renderProblem();update();
-  if(window.innerWidth<900)$('#prob').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
-function schedule(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;update();});}
+    $('#card').innerHTML=`<p class="help">Build a formula for the ${t.ans.name}. It can use ${S(t.v)} and the given quantities.</p><div class="srow fin"><label for="in-f"><b>${t.ans.lhs} =</b></label><div class="sin"><input id="in-f" class="fx" autocomplete="off" spellcheck="false"><span class="sval" id="sv-f"></span></div></div>`;
+    bindField($('#in-f'),'f');}
+  bindChips($('#stage'));
+  $$('#card input,#sentence input').forEach(el=>{el.addEventListener('dragover',e=>e.preventDefault());});
+  $('#math-w').hidden=!showMath;$('#b-math').textContent=showMath?'Hide the maths view':'Show the maths view';
+  renderFeedback();renderHints();renderLevels();go(st.step,true);}
+function stepsFor(t){return t.kind==='int'?[['read','Read'],['slice','Build a slice'],['sum','Add up'],['check','Check']]:[['read','Read'],['slice','Build the rate'],['sum','Watch it'],['check','Check']];}
+function go(k,quiet){const t=TPL[cur],st=state();stopPlay();st.step=k;
+  $$('#stage>section').forEach(s=>s.hidden=s.dataset.step!==k);
+  $('#steps').innerHTML=stepsFor(t).map(([kk,l],i)=>`<button type="button" class="stp" data-k="${kk}" aria-current="${kk===k}"><span class="n">${i+1}</span>${l}</button>`).join('');
+  $$('#steps .stp').forEach(b=>b.onclick=()=>go(b.dataset.k));
+  update();
+  if(!quiet){const top=$('#steps').getBoundingClientRect().top;if(top<0)$('#steps').scrollIntoView({block:'start'});}}
 
-function slotOr(fld){return fld.ast?pp(fld.ast,0):fld.err?'<span class="slot bad"></span>':'<span class="slot"></span>';}
-function renderPreview(m){const t=TPL[cur];let h;
-  if(t.kind==='int'){const st=state();
-    h=`<span class="pl">Reads as</span><span>${t.ans.lhs} = ${m.pre.ast?pp(m.pre.ast,1)+' + ':(st.showPre?'<span class="slot"></span> + ':'')}<span class="isig">∫</span><span class="ilim"><span>${slotOr(m.hi)}</span><span>${slotOr(m.lo)}</span></span>${m.f.ast?pp(m.f.ast,1.5):slotOr(m.f)} <i class="mv">d</i>${m.v?S(m.v):'<span class="slot"></span>'}</span>`;}
-  else h=`<span class="pl">Reads as</span><span>${t.ans.lhs} = ${slotOr(m.f)}</span>`;
-  $('#preview').innerHTML=h;
-  $('#perr').innerHTML=m.errs.map(([k,v])=>`<div><b>${k}:</b> ${v}</div>`).join('');}
+/* ---------- live info ---------- */
+function renderSliceInfo(m){const t=TPL[cur];
+  if(t.kind==='int'){const [a,b]=rng(m),N=nPieces,dx=(b-a)/N,x=a+probe*(b-a),vu=t.vars[0][1];
+    $('#cap-slice').innerHTML=`Slice at ${S(m.v)} = ${fmt(x,3)} ${uLab(vu)} (${t.vars[0][2]}), ${S(m.dv)} = ${fmt(dx,3)} ${uLab(vu)} thick.`;
+    const e=Object.create(envOf(t,P));e[m.v]=x;e[m.dv]=dx;
+    m.steps.forEach(s=>{const el=$('#sv-'+s.k);if(!el)return;if(!s.ast){el.textContent='';return;}let val;try{val=ev(s.ast,e);e[s.k]=val;}catch(er){val=NaN;}
+      el.textContent=isFinite(val)?`= ${fmt(val,4)}${s.dim&&!s.dimErr&&!zerod(s.dim)?' '+uName(s.dim):''}`:'= ?';});
+    $('#pv-slice').innerHTML=m.fin.ast?`<span class="pl">This slice reads as</span><span>${pp(fullSlice(m))}</span>`:'';
+    $('#er-slice').innerHTML=m.errs.filter(x=>!/range|Start value/.test(x[0])).map(([k,v])=>`<div><b>${k}:</b> ${v}</div>`).join('');
+    const note=$('#note-slice');let n='';
+    if(m.slice&&m.ratio!=null&&!m.lin){const r=m.ratio,dvH=`<i class="mv">d</i>${S(m.v)}`;
+      if(Math.abs(r-1)<1e-6)n=`This slice’s amount doesn’t change when the slice gets thicker. A slice twice as thick should add twice as much. Where does its thickness ${dvH} come in?`;
+      else if(Math.abs(r-4)<1e-5)n=`When the slice gets twice as thick, your amount gets four times bigger. It should only double, so ${dvH} should appear just once.`;
+      else n=`Your slice’s amount doesn’t grow in step with its thickness ${dvH}. A slice twice as thick should add exactly twice as much.`;}
+    note.hidden=!n;note.innerHTML=n;
+  }else{const r=refOf(t),x=r.dom[0]+probe*(r.dom[1]-r.dom[0]),vu=t.vars[0][1];let u=NaN;if(m.fx){try{u=m.fx(x);}catch(e){}}
+    $('#cap-slice').innerHTML=`${cap(t.vars[0][2])}: ${S(t.v)} = ${fmt(x,3)} ${uLab(vu)}.`;
+    $('#sv-f').textContent=m.fx&&isFinite(u)?`= ${fmt(u,4)}${m.dim&&!m.dimErr&&!zerod(m.dim)?' '+uName(m.dim):''} here`:'';
+    $('#pv-slice').innerHTML=m.f.ast?`<span class="pl">Reads as</span><span>${t.ans.lhs} = ${pp(m.f.ast)}</span>`:'';
+    $('#er-slice').innerHTML=m.errs.map(([k,v])=>`<div><b>${k}:</b> ${v}</div>`).join('');$('#note-slice').hidden=true;}}
+function renderSum(m){const t=TPL[cur];
+  if(t.kind==='int'){$('#mathline').innerHTML=`<span class="pl">In maths notation</span><span>${intHTML(m)}</span>`;
+    $('#er-sum').innerHTML=m.errs.filter(x=>/range|Start value/.test(x[0])).map(([k,v])=>`<div><b>${k}:</b> ${v}</div>`).join('');
+    const ps=piecesOf(m,nPieces),unit=(!m.dimErr&&m.strip)?' '+uName(m.strip):'';let h;
+    if(!m.slice)h='Build one slice first, in step 2.';else if(!ps)h='Fill in where the slices start and end to see them add up.';
+    else{const sumN=(m.preV||0)+ps.reduce((a,b)=>a+b,0);h=`With ${nPieces} piece${nPieces>1?'s':''} your total is <b>${fmt(sumN,5)}</b>${unit}. `+
+      (m.lin&&isFinite(m.total)?`As the pieces get thinner it settles at <b>${fmt(m.total,5)}</b>${unit}. That settled value is the integral.`:'Your total doesn’t settle as the pieces get thinner. The note in step 2 explains why.');}
+    $('#readout').innerHTML=h;
+  }else{const r=refOf(t),x=r.dom[0]+(playP!=null?playP:probe)*(r.dom[1]-r.dom[0]),vu=t.vars[0][1];let u=NaN;if(m.fx){try{u=m.fx(x);}catch(e){}}
+    $('#readout').innerHTML=m.fx?`At ${S(t.v)} = <b>${fmt(x,4)}</b> ${uLab(vu)}, your ${t.ans.name} is <b>${fmt(u,4)}</b>${m.dim&&!m.dimErr&&!zerod(m.dim)?' '+uName(m.dim):''}.`:'Build your formula in step 2 to see it here.';}}
+function setupLine(){const t=TPL[cur],m=M;
+  if(t.kind==='int')return `<span class="pl">Your set-up</span><span>${intHTML(m)}</span>`;
+  return `<span class="pl">Your formula</span><span>${t.ans.lhs} = ${m.f.ast?pp(m.f.ast):slot()}</span>`;}
+function update(){if(mode!=='prob')return;M=buildModel();const st=state();
+  renderSliceInfo(M);renderSum(M);if(st.step==='check')$('#chk-setup').innerHTML=setupLine();drawAll();
+  if($('#d-hints').classList.contains('open'))renderHints();}
+function schedule(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;mode==='prob'?update():sbDraw();});}
 
-function sceneState(m){const t=TPL[cur],r=refOf(t),st={};
-  if(t.kind==='int'){if(m.vOk&&m.v===r.v&&m.loV!=null&&m.hiV!=null){st.x=m.loV+probe*(m.hiV-m.loV);st.lo=m.loV;st.hi=m.hiV;}else{st.x=r.lo+probe*(r.hi-r.lo);st.lo=null;}}
-  else{st.dom=r.dom;st.x=r.dom[0]+probe*(r.dom[1]-r.dom[0]);}
+/* ---------- drawing ---------- */
+function sceneSt(m,o){const t=TPL[cur],r=refOf(t),st={};
+  if(t.kind==='int'){const [a,b,own]=rng(m),N=nPieces;st.x=o.k!=null?a+(o.k-0.5)*(b-a)/N:o.end?b:a+probe*(b-a);if(own){st.lo=a;st.hi=b;}else st.lo=null;
+    if(o.ghost&&isFinite(m.total))st.ghost={user:m.total,real:r.ans};}
+  else{st.dom=r.dom;st.x=r.dom[0]+(o.p!=null?o.p:probe)*(r.dom[1]-r.dom[0]);
+    if(o.ghost&&m.fx&&t.given){let I=NaN;try{I=simpson(m.fx,r.dom[0],st.x,200);}catch(e){}st.ghost={user:r.gx(r.dom[0])+I,real:r.gx(st.x),der:true};}}
   return st;}
-function drawScene(m){const t=TPL[cur],{g,W,H}=prep($('#cv-s')),c=colors(),st=sceneState(m);SCN[t.scene](g,W,H,P,st,c);
-  const r=refOf(t),vn=t.kind==='int'?(m.vOk&&m.v===r.v&&m.loV!=null&&m.hiV!=null?m.v:r.v):t.v,vu=t.vars.find(v=>v[0]===vn)[1];
-  let cap=`${S(vn)} = ${fmt(st.x,4)} ${uLab(vu)}`;
-  if(t.kind==='int'){if(m.fx&&m.v===vn){let y;try{y=m.fx(st.x);}catch(e){y=NaN;}cap+=` · your integrand here: ${fmt(y,4)}`;}
-    if(st.lo==null)cap+=` · <span style="color:var(--ink-3)">the slice follows ${S(r.v)}; fill in your limits to sweep your own range</span>`;}
-  $('#cap-s').innerHTML=cap;}
-function drawGraphs(m){const t=TPL[cur],r=refOf(t),c=colors(),st=state();
-  if(t.kind==='int'){const cv=$('#cv-a');
-    if(!m.f.ast){plot(cv,{msg:'Build the integrand to see its graph'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
-    if(!m.vOk){plot(cv,{msg:'Put the coordinate you slice along after d'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
-    if(m.loV==null||m.hiV==null||!m.fx){plot(cv,{msg:m.fx?'Fill in both limits to see your strips':'Fix the integrand to see its graph'});$('#cap-a').textContent='';$('#readout').innerHTML='';return;}
-    const same=m.v===r.v,showRef=st.hint>=2&&same;
-    const lo=Math.min(m.loV,m.hiV),hi=Math.max(m.loV,m.hiV);let xr=[lo,hi];if(showRef)xr=[Math.min(lo,r.lo,r.hi),Math.max(hi,r.lo,r.hi)];
-    const fRef=x=>(x<Math.min(r.lo,r.hi)-1e-12||x>Math.max(r.lo,r.hi)+1e-12)?NaN:r.fx(x);
-    const fUser=x=>(x<lo-1e-12||x>hi+1e-12)?NaN:m.fx(x);
-    const series=[{f:fUser,col:c.acc}];if(showRef)series.push({f:fRef,col:c.ref,dash:[6,4]});
-    const xu=t.vars.find(v=>v[0]===m.v)[1];
-    plot(cv,{xr,series,strips:{f:m.fx,n:nStrips,a:m.loV,b:m.hiV},gap:showRef?{s:[0,1],xr:[Math.max(lo,Math.min(r.lo,r.hi)),Math.min(hi,Math.max(r.lo,r.hi))]}:null,
-      probe:m.loV+probe*(m.hiV-m.loV),xl:`${m.v} (${uLab(xu)})`,yl:`integrand of ${m.v}`,legend:showRef?[['yours',c.acc],['correct',c.ref]]:null});
-    $('#cap-a').innerHTML=`Your integrand between your limits. Each strip is the integrand × <i class="mv">d</i>${S(m.v)}; the integral is what the strips add up to as they get thinner.`;
-    const dx=(m.hiV-m.loV)/nStrips;let sum=0;for(let i=0;i<nStrips;i++){try{sum+=m.fx(m.loV+(i+0.5)*dx)*dx;}catch(e){sum=NaN;}}
-    $('#readout').innerHTML=`Sum of ${nStrips} strip${nStrips>1?'s':''}: <b>${fmt(sum+(m.preV||0),5)}</b> · Your integral${m.pre.ast?' plus the outside term':''}: <b>${fmt(m.total,5)}</b>`;
-  }else{const x=r.dom[0]+probe*(r.dom[1]-r.dom[0]),xu=t.vars[0][1],xl=`${t.v} (${uLab(xu)})`;
+function drawScene(cv,m,o){const t=TPL[cur],{g,W,H}=prep(cv),c=colors();SCN[t.scene](g,W,H,P,sceneSt(m,o),c,t);}
+function niceCeil(S){const e=Math.pow(10,Math.floor(Math.log10(S)));return Math.ceil(S/e*2)/2*e;}
+function dial(g,cx,cy,R,S,val,c,ghost){g.lineWidth=12;g.strokeStyle=c.rule;g.beginPath();g.arc(cx,cy,R,Math.PI,2*Math.PI);g.stroke();
+  g.strokeStyle=c.bad;g.globalAlpha=0.28;g.beginPath();g.arc(cx,cy,R,Math.PI,1.5*Math.PI);g.stroke();g.globalAlpha=1;
+  for(const v of [-S,-S/2,0,S/2,S]){const a=Math.PI*(1-(v+S)/(2*S));line(g,cx+(R-16)*Math.cos(a),cy-(R-16)*Math.sin(a),cx+(R+7)*Math.cos(a),cy-(R+7)*Math.sin(a),c.ink3,1.5);
+    txt(g,fmt(v,2),cx+(R+22)*Math.cos(a),cy-(R+22)*Math.sin(a),c.ink3,'center',11);}
+  const nd=(v,col,dash)=>{if(!isFinite(v))return;const a=Math.PI*(1-(clamp(v,-S,S)+S)/(2*S));line(g,cx,cy,cx+(R-8)*Math.cos(a),cy-(R-8)*Math.sin(a),col,3.5,dash);};
+  if(ghost!=null)nd(ghost,c.ref,[6,4]);nd(val,c.acc);g.fillStyle=c.ink;g.beginPath();g.arc(cx,cy,6,0,7);g.fill();}
+function drawDialPanel(cv,m,o){const {g,W,H}=prep(cv),c=colors(),t=TPL[cur],r=refOf(t);
+  if(!m.fx){txt(g,'Build your formula in step 2 to see the dial',W/2,H/2,c.ink3,'center',13);return;}
+  const p=o.p!=null?o.p:probe,x=r.dom[0]+p*(r.dom[1]-r.dom[0]);let S=0;
+  for(let i=0;i<=80;i++){const xx=r.dom[0]+(r.dom[1]-r.dom[0])*i/80;let u;try{u=m.fx(xx);}catch(e){u=NaN;}if(isFinite(u))S=Math.max(S,Math.abs(u));if(o.ghost)S=Math.max(S,Math.abs(r.fx(xx)));}
+  S=S>0?niceCeil(S*1.02):1;let u;try{u=m.fx(x);}catch(e){u=NaN;}const unit=m.dim&&!m.dimErr&&!zerod(m.dim)?' '+uName(m.dim):'';
+  txt(g,fitT(g,`Your ${t.ans.name}`,W-24),12,16,c.ink2,'left',12);
+  const R=Math.min(W*0.34,H*0.52),cx=W/2,cy=H*0.68;dial(g,cx,cy,R,S,u,c,o.ghost?r.fx(x):null);
+  txt(g,`${fmt(u,4)}${unit}`,cx,cy+30,c.acc,'center',16);
+  if(o.ghost)txt(g,`real: ${fmt(r.fx(x),4)} ${uName(t.ans.u)}`,cx,cy+52,c.ref,'center',13);
+  txt(g,'−',cx-R-8,cy+16,c.ink3,'center',14);txt(g,'+',cx+R+8,cy+16,c.ink3,'center',14);}
+function drawPile(cv,m,o){const {g,W,H}=prep(cv),c=colors(),t=TPL[cur],r=refOf(t),ps=piecesOf(m,nPieces);
+  if(!ps){txt(g,m.slice?'Fill in where the slices start and end to see the pile':'Build one slice in step 2 to start the pile',W/2,H/2,c.ink3,'center',13);return;}
+  const k=o.k!=null?o.k:ps.length,pre=(m.preV&&isFinite(m.preV))?m.preV:0,cum=[pre];ps.forEach(p=>cum.push(cum[cum.length-1]+(isFinite(p)?p:0)));
+  const ghost=o.ghost&&isFinite(r.ans),vals=[0,...cum];if(ghost)vals.push(r.ans);
+  let lo=Math.min(...vals),hi=Math.max(...vals);if(!(hi-lo>0))hi=lo+1;const pd=(hi-lo)*0.08;if(lo<0)lo-=pd;if(hi>0)hi+=pd;
+  const T=36,B=30,Y=v=>T+(hi-v)/(hi-lo)*(H-T-B),cw=Math.min(84,W*0.2),cx=ghost?W*0.42:W*0.5,unit=(!m.dimErr&&m.strip)?' '+uName(m.strip):'';
+  txt(g,fitT(g,`Total ${t.ans.name}, piece by piece`,W-24),12,16,c.ink2,'left',12);
+  line(g,14,Y(0),W-14,Y(0),c.ink3,1);txt(g,'0',W-16,Y(0)-8,c.ink3,'right',11);
+  if(pre){g.fillStyle=c.ink3;g.globalAlpha=0.45;g.fillRect(cx-cw/2,Math.min(Y(0),Y(pre)),cw,Math.abs(Y(pre)-Y(0)));g.globalAlpha=1;txt(g,'start value',cx+cw/2+8,(Y(0)+Y(pre))/2,c.ink3,'left',11);}
+  for(let i=0;i<Math.min(k,ps.length);i++){const a=cum[i],b=cum[i+1],y1=Y(Math.max(a,b)),y2=Y(Math.min(a,b));
+    g.fillStyle=b>=a?c.acc:c.bad;g.globalAlpha=i%2?0.5:0.82;g.fillRect(cx-cw/2,y1,cw,Math.max(1,y2-y1));g.globalAlpha=1;
+    if(o.k!=null&&i===k-1){g.strokeStyle=c.ink;g.lineWidth=2;g.strokeRect(cx-cw/2,y1,cw,Math.max(1,y2-y1));}}
+  const tot=cum[Math.min(k,ps.length)],ty=Y(tot);
+  txt(g,`${fmt(tot,4)}${unit}`,cx-cw/2-10,ty,c.ink,'right',14);txt(g,o.k!=null&&o.k<ps.length?'so far':'your total',cx-cw/2-10,ty+16,c.ink2,'right',11);
+  if(ghost){const gx=cx+cw+26;g.strokeStyle=c.ref;g.setLineDash([5,4]);g.lineWidth=2;g.strokeRect(gx,Math.min(Y(0),Y(r.ans)),cw,Math.max(1,Math.abs(Y(r.ans)-Y(0))));g.setLineDash([]);
+    txt(g,'real total',gx+cw/2,Math.min(Y(0),Y(r.ans))-10,c.ref,'center',11);txt(g,`${fmt(r.ans,4)} ${uName(t.ans.u)}`,gx+cw/2,Math.min(Y(0),Y(r.ans))-24,c.ref,'center',12);}
+  txt(g,`${ps.length} piece${ps.length>1?'s':''}`,cx,H-12,c.ink3,'center',11);}
+function drawRight(cv,m,o){TPL[cur].kind==='int'?drawPile(cv,m,o):drawDialPanel(cv,m,o);}
+function drawMath(m){const t=TPL[cur],r=refOf(t),c=colors(),st=state();
+  if(t.kind==='int'){const cv=$('#cv-m1');if(!m.fx||m.loV==null||m.hiV==null){plot(cv,{msg:m.slice&&!m.lin?'Your slice needs to grow in step with its thickness first':'Build a slice and its range to see the maths view'});$('#cap-m1').textContent='';return;}
+    const xu=t.vars[0][1],showRef=st.hint>=2,lo=Math.min(m.loV,m.hiV),hi=Math.max(m.loV,m.hiV);let xr=[lo,hi];if(showRef)xr=[Math.min(lo,r.lo,r.hi),Math.max(hi,r.lo,r.hi)];
+    const fRef=x=>(x<Math.min(r.lo,r.hi)-1e-12||x>Math.max(r.lo,r.hi)+1e-12)?NaN:r.fx(x),fU=x=>(x<lo-1e-12||x>hi+1e-12)?NaN:m.fx(x);
+    const series=[{f:fU,col:c.acc}];if(showRef)series.push({f:fRef,col:c.ref,dash:[6,4]});
+    plot(cv,{xr,series,strips:{f:m.fx,n:nPieces,a:m.loV,b:m.hiV},gap:showRef?{s:[0,1],xr:[Math.max(lo,Math.min(r.lo,r.hi)),Math.min(hi,Math.max(r.lo,r.hi))]}:null,probe:m.loV+probe*(m.hiV-m.loV),
+      xl:`${cap(t.vars[0][2])}, ${axU(xu)}`,yl:`${t.ans.rate||cap(t.ans.name)+' per '+uName(xu)}, ${m.fd?axU(m.fd):'?'}`,legend:showRef?[['yours',c.acc],['correct',c.ref]]:null});
+    const rate=lowFirst(t.ans.rate||t.ans.name+' per '+uName(xu)),spot=eqd(xu,U.s)?'moment':'spot';
+    $('#cap-m1').innerHTML=`The same slices drawn as bars. Each bar’s height is the ${rate} at that ${spot}, and its width is the slice thickness, so its area is the slice’s amount. The area under the line is the total ${t.ans.name}.`;
+  }else{const x=r.dom[0]+(playP!=null?playP:probe)*(r.dom[1]-r.dom[0]),xu=t.vars[0][1],xl=`${cap(t.vars[0][2])}, ${axU(xu)}`;
     if(t.given){const gy=r.gx(x),tg=[];if(st.hint>=2){tg.push({x,y:gy,m:t.given.sign*r.fx(x),col:c.ref});if(m.fx){let uy;try{uy=m.fx(x);}catch(e){uy=NaN;}tg.push({x,y:gy,m:t.given.sign*uy,col:c.acc,dash:[6,4]});}}
-      plot($('#cv-a'),{xr:r.dom,series:[{f:r.gx,col:c.ink2}],probe:x,pts:[{x,y:gy,col:c.ink}],tangents:tg,xl,yl:'given function',legend:st.hint>=2?[['true slope',c.ref],['your slope',c.acc]]:null});
-      $('#cap-a').innerHTML=`${t.given.lhs}, the given function.${st.hint>=2?' The lines show the true slope and the slope your expression implies at this point.':''}`;}
-    const cv=$('#cv-b');
-    if(!m.fx){plot(cv,{msg:m.f.err?'Fix the expression to see its graph':'Build your expression to see its graph'});$('#cap-b').textContent='';$('#readout').innerHTML='';return;}
-    const series=[{f:m.fx,col:c.acc}];if(st.hint>=2)series.push({f:r.fx,col:c.ref,dash:[6,4]});
-    let uy;try{uy=m.fx(x);}catch(e){uy=NaN;}
-    plot(cv,{xr:r.dom,series,gap:st.hint>=2?{s:[0,1],xr:r.dom}:null,probe:x,pts:[{x,y:uy,col:c.acc}],xl,yl:'your expression',legend:st.hint>=2?[['yours',c.acc],['correct',c.ref]]:null});
-    $('#cap-b').innerHTML=`Your ${t.ans.lhs} across the range of ${S(t.v)}.`;
-    $('#readout').innerHTML=`At ${S(t.v)} = <b>${fmt(x,4)}</b> ${uLab(xu)}, your expression gives <b>${fmt(uy,4)}</b>`;}}
-function update(){M=buildModel();renderPreview(M);drawScene(M);drawGraphs(M);if(state().hint>0)renderHints();}
+      plot($('#cv-m2'),{xr:r.dom,series:[{f:r.gx,col:c.ink2}],probe:x,pts:[{x,y:gy,col:c.ink}],tangents:tg,xl,yl:`${cap(t.given.name)}, ${t.given.uLabel||axU(t.given.u)}`,legend:st.hint>=2?[['true slope',c.ref],['your slope',c.acc]]:null});
+      $('#cap-m2').innerHTML=`The ${t.given.name} from the problem. How steep it is at each point is the ${t.ans.name}${t.given.sign<0?', with the sign flipped':''}.`;}
+    const cv=$('#cv-m1');if(!m.fx){plot(cv,{msg:'Build your formula in step 2 to see its graph'});$('#cap-m1').textContent='';return;}
+    const series=[{f:m.fx,col:c.acc}];if(st.hint>=2)series.push({f:r.fx,col:c.ref,dash:[6,4]});let uy;try{uy=m.fx(x);}catch(e){uy=NaN;}
+    plot(cv,{xr:r.dom,series,gap:st.hint>=2?{s:[0,1],xr:r.dom}:null,probe:x,pts:[{x,y:uy,col:c.acc}],xl,yl:`Your ${t.ans.name}, ${m.dim&&!m.dimErr?axU(m.dim):'?'}`,legend:st.hint>=2?[['yours',c.acc],['correct',c.ref]]:null});
+    $('#cap-m1').innerHTML=`Your formula for the ${t.ans.name}, drawn across the whole range. The dial shows one point of this line at a time.`;}}
+function drawAll(){if(mode!=='prob')return;const st=state(),m=M,k=st.step;
+  if(k==='read')drawScene($('#cv-read'),m,{});
+  if(k==='slice')drawScene($('#cv-slice'),m,{});
+  if(k==='sum'){drawScene($('#cv-sum'),m,{k:playK,p:playP});drawRight($('#cv-pile'),m,{k:playK,p:playP});if(showMath)drawMath(m);}
+  if(k==='check'){const gh=st.ghost,rest=playK==null&&playP==null;drawScene($('#cv-cs'),m,{k:playK,p:playP,ghost:gh,end:rest&&TPL[cur].kind==='int'});drawRight($('#cv-cg'),m,{k:playK,p:playP,ghost:gh});}}
+
+/* ---------- play ---------- */
+function setPlayLabels(on){['#b-play','#b-play3'].forEach(s=>{$(s).textContent=on?'Pause':'Play';});}
+function startPlay(){if(play){stopPlay();drawAll();return;}const t=TPL[cur];
+  if(reduceMotion()){playK=null;playP=null;probe=1;syncSliders();update();return;}
+  const dur=t.kind==='int'?Math.min(6000,Math.max(2600,nPieces*110)):4500;play={t0:performance.now(),dur};setPlayLabels(true);
+  const tick=now=>{if(!play)return;const f=Math.min(1,(now-play.t0)/play.dur);if(t.kind==='int')playK=Math.max(1,Math.ceil(f*nPieces));else playP=f;drawAll();if(t.kind!=='int')renderSum(M);
+    if(f<1)play.raf=requestAnimationFrame(tick);else{const done=t.kind!=='int';stopPlay();if(done){probe=1;syncSliders();}update();}};
+  play.raf=requestAnimationFrame(tick);}
+function stopPlay(){if(play&&play.raf)cancelAnimationFrame(play.raf);play=null;playK=null;playP=null;setPlayLabels(false);}
+function syncSliders(){const v=Math.round(probe*1000);$('#sl-probe').value=v;$('#sl-probe2').value=v;$('#sl-n1').value=nPieces;$('#sl-n2').value=nPieces;$('#o-n1').textContent=nPieces;$('#o-n2').textContent=nPieces;}
+
+/* ---------- common-sense prompts ---------- */
+function sample(f,a,b,n){const o=[];for(let i=0;i<=n;i++){const x=a+(b-a)*i/n;let y;try{y=f(x);}catch(e){y=NaN;}o.push([x,y]);}return o;}
+function shapePrompts(uf,rf,a,b,e,what){const out=[],U=sample(uf,a,b,24),R=sample(rf,a,b,24);
+  if(U.some(p=>!isFinite(p[1])))return out;
+  const scale=Math.max(...R.map(p=>Math.abs(p[1])))||1;
+  let opp=0,cnt=0;R.forEach((p,i)=>{if(Math.abs(p[1])>0.05*scale){cnt++;if(Math.sign(p[1])!==Math.sign(U[i][1]))opp++;}});
+  if(cnt&&opp/cnt>0.6){out.push(`Your ${what} has the opposite sign to the real one. Should each piece add to the total or take away from it?`);return out;}
+  const rat=[];R.forEach((p,i)=>{if(Math.abs(p[1])>0.05*scale)rat.push(U[i][1]/p[1]);});
+  if(rat.length>3){const mean=rat.reduce((s,x)=>s+x,0)/rat.length,spread=Math.max(...rat)-Math.min(...rat);
+    if(spread<0.02*Math.abs(mean)&&Math.abs(mean-1)>0.01){out.push(mean>1?`Everywhere, your ${what} comes out about ${fmt(mean,2)} times too big. The pattern from ${e[0]} to ${e[1]} looks right, so one factor is extra or too large.`:`Everywhere, your ${what} comes out about ${fmt(1/mean,2)} times too small. The pattern looks right, so a factor is missing.`);return out;}}
+  const span=v=>Math.max(...v.map(p=>p[1]))-Math.min(...v.map(p=>p[1]));
+  const um=Math.max(...U.map(p=>Math.abs(p[1])))||1;
+  if(span(U)<0.01*um&&span(R)>0.1*scale){out.push(`Your ${what} is the same everywhere, but the real one changes between ${e[0]} and ${e[1]}. Which end should be bigger, and why?`);return out;}
+  const du=U[U.length-1][1]-U[0][1],dr=R[R.length-1][1]-R[0][1];
+  if(du*dr<0&&Math.abs(dr)>0.1*scale){const ub=du>0?e[1]:e[0],rb=dr>0?e[1]:e[0];out.push(`Your formula makes the ${what} biggest near ${ub}. Picture ${ub} and ${rb}: which one really needs more?`);return out;}
+  out.push(`Compare your ${what} near ${e[0]} and near ${e[1]} with what really happens there. The numbers in step 2 can help.`);return out;}
+function sensePrompts(m){const t=TPL[cur],r=refOf(t),e=t.ends||['the start','the end'],out=[];
+  if(t.kind==='int'){const tol=1e-6*Math.abs(r.hi-r.lo);
+    if(Math.abs(m.loV-r.lo)>tol||Math.abs(m.hiV-r.hi)>tol)out.push(`Check your range. Your slices run from ${S(m.v)} = ${fmt(m.loV,3)} to ${S(m.v)} = ${fmt(m.hiV,3)}. Does that cover everything, from ${e[0]} to ${e[1]}?`);
+    if(Math.abs((m.preV||0)-r.pre)>1e-6*Math.max(1,Math.abs(r.pre)))out.push(r.pre?'Think about where things stand before the first slice. Does the total start from zero?':'Your start value adds something before any slice is counted. Should the total start from zero here?');
+    if(m.fx)shapePrompts(m.fx,r.fx,r.lo,r.hi,e,'slices').forEach(x=>out.push(x));}
+  else if(m.fx)shapePrompts(m.fx,r.fx,r.dom[0],r.dom[1],e,t.ans.name).forEach(x=>out.push(x));
+  return out.slice(0,2);}
 
 /* ---------- checking ---------- */
-function derCompare(m){const r=refOf(TPL[cur]);let scale=0;const pts=[];for(let i=0;i<=60;i++){const x=r.dom[0]+(r.dom[1]-r.dom[0])*i/60;const y=r.fx(x);scale=Math.max(scale,Math.abs(y));pts.push([x,y]);}
+function derCompare(m){const r=refOf(TPL[cur]);let scale=0;const pts=[];for(let i=0;i<=60;i++){const x=r.dom[0]+(r.dom[1]-r.dom[0])*i/60,y=r.fx(x);scale=Math.max(scale,Math.abs(y));pts.push([x,y]);}
   let worst=0,wx=null,bad=false;for(const [x,y] of pts){let u;try{u=m.fx(x);}catch(e){u=NaN;}if(!isFinite(u)){bad=true;wx=x;break;}const e=Math.abs(u-y)/(Math.abs(y)+1e-3*scale);if(e>worst){worst=e;wx=x;}}
   return {worst,wx,bad};}
-function check(){const t=TPL[cur],st=state(),m=M,r=refOf(t);
-  if(m.errs.length){st.fb={k:'bad',h:`<p>Fix the expression first. ${m.errs[0][1]}</p>`};renderFeedback();return;}
+function fbBad(head,lines,prompts){const st=state();st.fb={k:'bad',h:`<p class="head">${head}</p>${(lines||[]).map(l=>`<p>${l}</p>`).join('')}${prompts&&prompts.length?`<ul>${prompts.map(p=>`<li>${p}</li>`).join('')}</ul>`:''}`};}
+function check(){const t=TPL[cur],st=state(),m=M=buildModel(),r=refOf(t);st.ghost=false;
+  if(m.errs.length){fbBad('Fix this first',[`${m.errs[0][0]}: ${m.errs[0][1]}`]);return after();}
   if(t.kind==='int'){
-    if(!m.f.ast||!m.vOk||m.lo.empty||m.hi.empty){st.fb={k:'info',h:'<p>Fill in the integrand, both limits and the variable after <i class="mv">d</i>, then check.</p>'};renderFeedback();return;}
-    if(!isFinite(m.total)){st.fb={k:'bad',h:'<p>Your set-up doesn’t give a finite number yet.</p>'};renderFeedback();return;}
-    const rel=(m.total-r.ans)/Math.abs(r.ans),dimOk=!m.dimErr&&m.strip&&eqd(m.strip,t.ans.u)&&(!m.preD||eqd(m.preD,t.ans.u));
-    if(Math.abs(rel)<2e-3&&dimOk){win(t,`${t.ans.lhs} = ${fmt(r.ans,4)} ${uName(t.ans.u)}`);return;}
-    let msg=`<p>Not yet. Your set-up gives ${fmt(m.total,4)}, which is ${Math.abs(rel)<10?Math.round(Math.abs(rel)*100)+'%':fmt(Math.abs(rel)+1,3)+' times'} ${rel>0?'too high':'too low'}.</p>`;
-    if(Math.abs(rel)<2e-3)msg=`<p>The number matches, but the units don’t: it should be in ${uName(t.ans.u)}.</p>`;
-    else if(m.dimErr)msg+=`<p>There’s also a units problem: ${m.dimErr}.</p>`;
-    else if(m.strip&&!eqd(m.strip,t.ans.u))msg+=`<p>Its units also come out as ${uName(m.strip)} instead of ${uName(t.ans.u)}.</p>`;
-    st.fb={k:'bad',h:msg};renderFeedback();return;}
-  if(!m.fx){st.fb={k:'info',h:'<p>Build your expression first, then check.</p>'};renderFeedback();return;}
-  const cmp=derCompare(m),dimOk=!m.dimErr&&m.dim&&eqd(m.dim,t.ans.u);
-  if(!cmp.bad&&cmp.worst<2e-3&&dimOk){win(t,'It matches the true rate everywhere in the range.');return;}
-  let msg;if(cmp.bad)msg=`<p>Not yet. Your expression has no finite value at ${S(t.v)} = ${fmt(cmp.wx,3)}.</p>`;
-  else if(cmp.worst<2e-3)msg=`<p>The values match, but the units should be ${uName(t.ans.u)}.</p>`;
-  else msg=`<p>Not yet. Your expression is off by up to ${cmp.worst<10?Math.round(cmp.worst*100)+'%':'a factor of '+fmt(cmp.worst+1,2)} across the range of ${S(t.v)}.</p>`;
-  if(!cmp.bad&&cmp.worst>=2e-3){if(m.dimErr)msg+=`<p>There’s also a units problem: ${m.dimErr}.</p>`;else if(m.dim&&!eqd(m.dim,t.ans.u))msg+=`<p>Its units also come out as ${uName(m.dim)} instead of ${uName(t.ans.u)}.</p>`;}
-  st.fb={k:'bad',h:msg};renderFeedback();}
-function win(t,line){const st=state();solved.add(t.id);saveSolved();renderList();
-  st.fb={k:'good',h:`<p><b>Correct.</b> ${line}</p><p>Try new numbers to see that your set-up works for any values, or move on.</p><div class="row"><button class="btn" type="button" data-act="new">New numbers</button><button class="btn primary" type="button" data-act="next">Next problem</button></div>`};
-  renderFeedback();}
+    if(!m.fin.ast){st.fb={k:'info',h:'<p>Build one slice first, in step 2.</p>'};return after();}
+    if(m.lo.empty||m.hi.empty){st.fb={k:'info',h:'<p>Fill in where the slices start and end, in step 3.</p>'};return after();}
+    if(!m.lin){fbBad('Not yet',['Your slice’s amount doesn’t grow in step with its thickness, so the pieces can’t settle to a total. Step 2 has a note about it.']);return after();}
+    if(!isFinite(m.total)){fbBad('Not yet',['Your set-up doesn’t give a finite number yet.']);return after();}
+    const rel=(m.total-r.ans)/Math.abs(r.ans),dimOk=m.strip&&eqd(m.strip,t.ans.u)&&(!m.preD||eqd(m.preD,t.ans.u));
+    if(Math.abs(rel)<2e-3&&dimOk){
+      if(Math.abs(m.preV-r.pre)<=1e-6*Math.max(1,Math.abs(r.pre))){const span=Math.abs(r.hi-r.lo),tol=1e-6*span,same=Math.abs(m.loV-r.lo)<tol&&Math.abs(m.hiV-r.hi)<tol,flip=Math.abs(m.loV-r.hi)<tol&&Math.abs(m.hiV-r.lo)<tol;
+        if(same||flip){let worst=0,scale=0;for(let i=0;i<=40;i++){const x=r.lo+(r.hi-r.lo)*i/40,y=r.fx(x);scale=Math.max(scale,Math.abs(y));let u;try{u=m.fx(x);}catch(e){u=NaN;}worst=Math.max(worst,isFinite(u)?Math.abs((flip?-u:u)-y):Infinity);}
+          if(worst>2e-3*scale){fbBad('So close',['Your total comes out right, but your slices don’t match the physics at every spot. A pattern drawn backwards, mirrored end to end, adds up to the same total but describes a different situation.'],shapePrompts(x=>flip?-m.fx(x):m.fx(x),r.fx,r.lo,r.hi,t.ends||['the start','the end'],'slices'));return after();}}}
+      return win(t,`${t.ans.lhs} = ${fmt(r.ans,4)} ${uName(t.ans.u)}.`);}
+    st.ghost=true;
+    const lines=[`Your set-up gives ${fmt(m.total,4)}${m.strip?' '+uName(m.strip):''}. The real ${t.ans.name} is shown as a dashed ghost.`];
+    if(Math.abs(rel)<2e-3)lines[0]=`The number matches, but the units don’t: a total ${t.ans.name} should be in ${uName(t.ans.u)}.`;
+    else if(m.strip&&!eqd(m.strip,t.ans.u))lines.push(`Its units also come out as ${uName(m.strip)} instead of ${uName(t.ans.u)}.`);
+    fbBad('Not yet',lines,sensePrompts(m));return after();}
+  if(!m.fx){st.fb={k:'info',h:'<p>Build your formula first, in step 2.</p>'};return after();}
+  const cmp=derCompare(m),dimOk=m.dim&&!m.dimErr&&eqd(m.dim,t.ans.u);
+  if(!cmp.bad&&cmp.worst<2e-3&&dimOk)return win(t,'It matches the real rate everywhere in the range.');
+  st.ghost=true;
+  const lines=[];if(cmp.bad)lines.push(`Your formula has no finite value at ${S(t.v)} = ${fmt(cmp.wx,3)}.`);
+  else if(cmp.worst<2e-3)lines.push(`The values match, but the units should be ${uName(t.ans.u)}.`);
+  else lines.push(`The dashed needle on the dial shows the real ${t.ans.name}. Press Play to watch the two side by side.`);
+  if(!cmp.bad&&cmp.worst>=2e-3&&m.dim&&!m.dimErr&&!eqd(m.dim,t.ans.u))lines.push(`Your units also come out as ${uName(m.dim)} instead of ${uName(t.ans.u)}.`);
+  fbBad('Not yet',lines,sensePrompts(m));return after();}
+function after(){renderFeedback();drawAll();}
+function win(t,line){const st=state();st.ghost=false;solved.add(t.id);saveSolved();renderLevels();
+  st.fb={k:'good',h:`<p class="head">Correct</p><p>${line}</p><p>Try new numbers to see that your set-up works for any values, or move on.</p><div class="row"><button class="btn" type="button" data-act="new">New numbers</button><button class="btn primary" type="button" data-act="next">Next level</button></div>`};
+  after();}
 function renderFeedback(){const st=state(),el=$('#fb');if(!st.fb){el.innerHTML='';return;}
   el.innerHTML=`<div class="fb ${st.fb.k}" role="status">${st.fb.h}</div>`;
-  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>b.dataset.act==='new'?newNumbers():loadProblem((cur+1)%TPL.length));}
+  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{if(b.dataset.act==='new'){newNumbers();go('check');}else{loadProblem((cur+1)%TPL.length);}});}
 
 /* ---------- hints ---------- */
-function renderHints(){const t=TPL[cur],st=state(),m=M,r=refOf(t),out=[];
-  $('#b-hint').textContent=st.hint>=3?'All hints shown':`Get a hint (${st.hint+1} of 3)`;$('#b-hint').disabled=st.hint>=3;
-  $('#b-sol').hidden=st.hint<3;
+function renderHints(){if(mode!=='prob')return;const t=TPL[cur],st=state(),m=M||buildModel(),r=refOf(t),out=[];
   if(st.hint>=1){let h;
-    if(t.kind==='int'){
-      if(!m||!m.f.ast||!m.vOk)h=`Once your integrand and variable are in place, this hint checks units. ${t.ans.lhs} must come out in <b>${uName(t.ans.u)}</b>.`;
-      else if(m.dimErr)h=`Inside your set-up ${m.dimErr}. Every term you add must have the same units.`;
-      else{const ok=eqd(m.strip,t.ans.u);h=`Your strip, integrand × <i class="mv">d</i>${S(m.v)}, comes out in <b>${uName(m.strip)}</b>. ${t.ans.lhs} must be in <b>${uName(t.ans.u)}</b>. `+
-        (ok?'They match, so if your result is still off, look at the shape of your integrand or at your limits.':'They don’t match, so a factor is missing, extra, or in the wrong place.');
-        const vd=t.vars.find(v=>v[0]===m.v)[1];
-        [['lower',m.loD],['upper',m.hiD]].forEach(([nm,d])=>{if(d&&!(d.c===0)&&!eqd(d.d,vd))h+=` Your ${nm} limit is in ${uName(d.d)}, but ${S(m.v)} is in ${uName(vd)}.`;});
-        if(m.preD&&!eqd(m.preD,t.ans.u))h+=` Your outside term is in ${uName(m.preD)}.`;}}
-    else{if(!m||!m.f.ast)h=`Once you’ve built an expression, this hint checks units. ${t.ans.lhs} must come out in <b>${uName(t.ans.u)}</b>.`;
-      else if(m.dimErr)h=`Inside your expression ${m.dimErr}. Every term you add must have the same units.`;
-      else{const ok=eqd(m.dim,t.ans.u);h=`Your expression comes out in <b>${uName(m.dim)}</b>. ${t.ans.lhs} must be in <b>${uName(t.ans.u)}</b>. `+(ok?'They match, so look at the shape of your expression next.':'They don’t match, so something is missing, extra, or in the wrong place.');}}
+    if(t.kind==='int'){if(!m.fin.ast)h=`Once you’ve built a slice, this hint checks its units. One slice of ${t.ans.name} must come out in <b>${uName(t.ans.u)}</b>.`;
+      else if(m.dimErr)h=`Inside your slice ${m.dimErr}. Every term you add must have the same units.`;
+      else{const ok=m.strip&&eqd(m.strip,t.ans.u);h=`One slice, as you’ve written it, comes out in <b>${m.strip?uName(m.strip):'?'}</b>. A slice of ${t.ans.name} must be in <b>${uName(t.ans.u)}</b>. `+(ok?'They match, so if the result is still off, look at how the slices change along the range, or at the range itself.':'They don’t match, so a factor is missing, extra, or in the wrong place.');
+        const vd=t.vars[0][1];[['start',m.loD],['end',m.hiD]].forEach(([nm,d])=>{if(d&&d.c!==0&&!eqd(d.d,vd))h+=` The ${nm} of your range is in ${uName(d.d)}, but ${S(m.v)} is in ${uName(vd)}.`;});}}
+    else{if(!m.f.ast)h=`Once you’ve built a formula, this hint checks its units. The ${t.ans.name} must come out in <b>${uName(t.ans.u)}</b>.`;
+      else if(m.dimErr)h=`Inside your formula ${m.dimErr}. Every term you add must have the same units.`;
+      else{const ok=eqd(m.dim,t.ans.u);h=`Your formula comes out in <b>${uName(m.dim)}</b>. The ${t.ans.name} must be in <b>${uName(t.ans.u)}</b>. `+(ok?'They match, so look at how it changes along the range next.':'They don’t match, so something is missing, extra, or in the wrong place.');}}
     out.push(['Hint 1 · Units',h]);}
-  if(st.hint>=2){let h;
-    if(t.kind==='int'){
-      if(!m||!m.fx)h=`The amber curve shows a correct integrand when you slice along ${S(r.v)}. Build your integrand and limits to compare.`;
-      else if(m.v!==r.v)h=`You slice along ${S(m.v)}. The reference slices along ${S(r.v)}, so the two curves can’t be laid on top of each other. Try slicing along ${S(r.v)} to compare, or rely on the units hint.`;
-      else{const a=Math.min(r.lo,r.hi),b=Math.max(r.lo,r.hi);let worst=0,wx=null,sgn=0,scale=0;
-        for(let i=0;i<=80;i++){const x=a+(b-a)*i/80;scale=Math.max(scale,Math.abs(r.fx(x)));}
-        for(let i=0;i<=80;i++){const x=a+(b-a)*i/80;let u;try{u=m.fx(x);}catch(e){u=NaN;}const d=u-r.fx(x);if(isFinite(d)&&Math.abs(d)>worst){worst=Math.abs(d);wx=x;sgn=Math.sign(d);}}
-        const vu=uLab(t.vars.find(v=>v[0]===r.v)[1]);
-        h=`The dashed amber curve is a correct integrand for slicing along ${S(r.v)}, drawn over the range it should cover. The shaded band is the gap between yours and it.`+
-          (worst<1e-3*scale?' Your integrand matches it. Compare the ranges: your limits are the problem.':` The biggest gap is near ${S(r.v)} = ${fmt(wx,3)} ${vu}, where yours is ${sgn>0?'higher':'lower'}.`);}}
-    else h=`The dashed amber curve is the correct ${t.ans.lhs}, with the gap to yours shaded.${t.given?' On the given function, compare the true slope line with the one your expression implies.':''} Move the slider to see where they part.`;
-    out.push(['Hint 2 · Shape',h]);}
+  if(st.hint>=2)out.push(['Hint 2 · Shape',`The maths view (in the ${t.kind==='int'?'Add up':'Watch it'} step) now shows the correct line, dashed in amber, with the gap to yours shaded. <button class="btn link" type="button" data-act="math">Open the maths view</button>`]);
   if(st.hint>=3)out.push(['Hint 3 · Set-up',t.hint]);
-  let html=out.map(([l,h])=>`<div class="hint"><div class="hl">${l}</div><p>${h}</p></div>`).join('');
-  if(st.showSol){const K=knownOf(t),s=t.sol;let body;
-    if(t.kind==='int')body=`${t.ans.lhs} = ${s.pre?pp(parse(s.pre,K),1)+' + ':''}<span class="isig">∫</span><span class="ilim"><span>${pp(parse(s.hi,K))}</span><span>${pp(parse(s.lo,K))}</span></span>${pp(parse(s.f,K),1.5)} <i class="mv">d</i>${S(s.v)}`;
-    else body=`${t.ans.lhs} = ${pp(parse(s.f,K))}`;
-    html+=`<div class="sol"><div class="hl" style="font-family:var(--f-display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">One correct set-up</div><div class="preview">${body}</div><p style="margin:0;font-size:14px;color:var(--ink-2)">Other set-ups can be right too, as long as they add up the same thing.</p><div><button class="btn" type="button" id="b-use">Put it in the builder</button></div></div>`;}
-  $('#hints').innerHTML=html;
-  const bu=$('#b-use');if(bu)bu.onclick=useSolution;}
-function useSolution(){const t=TPL[cur],st=state(),s=t.sol;st.f=s.f;if(t.kind==='int'){st.v=s.v;st.lo=s.lo;st.hi=s.hi;if(s.pre){st.showPre=true;st.pre=s.pre;}}renderProblem();update();}
-function newNumbers(){const st=state();st.seed=1+Math.floor(Math.random()*1e9);st.fb=null;P=mkParams(TPL[cur],st.seed);renderProblem();update();}
+  let html=out.length?'':'<p class="help">Hints come one at a time, from a gentle nudge to the whole set-up.</p>';
+  html+=out.map(([l,h])=>`<div class="hint"><div class="hl">${l}</div><p>${h}</p></div>`).join('');
+  if(st.showSol){const K=knownOf(t),s=t.sol;const body=t.kind==='int'?`${t.ans.lhs} = ${s.pre?pp(parse(s.pre,K),1)+' + ':''}<span class="isig">∫</span><span class="ilim"><span>${pp(parse(s.hi,K))}</span><span>${pp(parse(s.lo,K))}</span></span>${pp(parse(s.f,K),1.5)} <i class="mv">d</i>${S(s.v)}`:`${t.ans.lhs} = ${pp(parse(s.f,K))}`;
+    html+=`<div class="sol"><h3>One correct set-up</h3><div class="preview"><span>${body}</span></div><p class="help">Other set-ups can be right too, as long as they add up the same thing.</p><div><button class="btn" type="button" data-act="use">Put it in the builder</button></div></div>`;}
+  html+=st.hint<3?`<div><button class="btn primary" type="button" data-act="next">Show hint ${st.hint+1} of 3</button></div>`:(st.showSol?'':`<div><button class="btn" type="button" data-act="sol">Show a solution</button></div>`);
+  const el=$('#hints-body');el.innerHTML=html;
+  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act,s=state();
+    if(a==='next'){s.hint++;if(s.hint>=2)setMath(true);renderHints();update();}
+    else if(a==='sol'){s.showSol=true;renderHints();}
+    else if(a==='use'){useSolution();closeDrawers(true);}
+    else if(a==='math'){closeDrawers(true);setMath(true);go('sum');}});}
+function setMath(on){showMath=on;$('#math-w').hidden=!on;$('#b-math').textContent=on?'Hide the maths view':'Show the maths view';}
+function useSolution(){const t=TPL[cur],st=state(),s=t.sol;
+  if(t.kind==='int'){st.steps={final:`(${s.f}) d${s.v}`};st.lo=s.lo;st.hi=s.hi;if(s.pre){st.showPre=true;st.pre=s.pre;}else{st.showPre=false;st.pre='';}}else st.f=s.f;
+  st.fb=null;st.ghost=false;st.step='check';renderProblem();}
+function newNumbers(){const st=state();st.seed=1+Math.floor(Math.random()*1e9);st.fb=null;st.ghost=false;P=mkParams(TPL[cur],st.seed);renderProblem();}
+function loadProblem(i){stopPlay();sbStop();mode='prob';cur=i;const st=state();P=mkParams(TPL[cur],st.seed);showMath=false;
+  $('#prob-ui').hidden=false;$('#sandbox').hidden=true;$('#tools').hidden=false;renderProblem();window.scrollTo(0,0);}
+
+/* ================= sandbox ================= */
+const SB=[
+{id:'speed',title:'Speed makes distance',kind:'int',scene:'car',xr:[0,60],yr:[0,30],step:0.5,init:[0,8,16,20,18,10,0],xl:'Time, s',yl:'Speed, m/s',tl:'Time',start:0,
+ intro:'Drag the dots to shape the car’s speed over one minute, then press Play. The blue area under the line is the distance the car covers. A high line for a long time means a lot of road.',
+ read:k=>`Distance so far: <b>${fmt(k.Ft,4)} m</b> · Speed now: <b>${fmt(k.ft,3)} m/s</b> · Whole minute: <b>${fmt(k.Fend,4)} m</b>`,
+ ch:[['Drive exactly 600 m in the minute (the first flag).',k=>near(k.Fend,600,0.02)],['Cover 900 m and be stopped at the very end.',k=>near(k.Fend,900,0.02)&&Math.abs(k.f(60))<0.3],['Reach 500 m without ever going faster than 12 m/s.',k=>k.Fend>=500&&k.max<=12.05]]},
+{id:'flow',title:'Flow fills a tank',kind:'int',scene:'tank',xr:[0,60],yr:[-3,3],step:0.1,init:[1,1.5,1,0.5,-0.5,-1,0],xl:'Time, s',yl:'Flow, L/s (in above 0, out below)',tl:'Time',start:40,cap:120,
+ intro:'Drag the dots to set how fast water flows in (above the zero line) or drains out (below it). The tank starts with 40 L. Blue area adds water and red area takes it away.',
+ read:k=>`Water now: <b>${fmt(k.Vt,4)} L</b> · Flow now: <b>${fmt(k.ft,3)} L/s</b> · At the end: <b>${fmt(k.endV,4)} L</b>`,
+ ch:[['End the minute with exactly 100 L.',k=>near(k.endV,100,0.02)],['Go above 80 L, then end back at 40 L.',k=>k.peakV>=80&&Math.abs(k.endV-40)<=1],['Drain to under 5 L by the end without the tank ever running dry.',k=>k.endV<5&&k.minV>0]]},
+{id:'push',title:'Catapult push',kind:'int',scene:'cat',xr:[0,2],yr:[0,600],step:5,init:[200,320,360,300,200,100],xl:'Distance pushed along the rail, m',yl:'Push force, N',tl:'Push',start:0,mass:2,
+ intro:'A catapult pushes a 2 kg rock along a 2 m rail, then lets go. Drag the dots to shape the push, then press Play. The blue area under the line is the energy the rock gets, and that energy decides how high it flies.',
+ read:k=>`Energy given so far: <b>${fmt(k.Ft,4)} J</b> · Height the rock will reach: <b>${fmt(k.Fend/(2*g0),3)} m</b>`,
+ ch:[['Launch the rock to exactly 20 m.',k=>near(k.Fend/(2*g0),20,0.02)],['Reach 15 m with a push that never goes above 250 N.',k=>k.Fend/(2*g0)>=15&&k.max<=250.5],['Reach 30 m while pushing hardest at the very end of the rail.',k=>k.Fend/(2*g0)>=30&&k.max<=k.f(2)+0.5]]},
+{id:'pos',title:'Position shows speed',kind:'der',scene:'carder',xr:[0,60],yr:[0,800],step:5,init:[0,60,170,300,420,500,540],xl:'Time, s',yl:'Distance from the start, m',tl:'Time',
+ intro:'This time the line is where the car is. Drag the dots and press Play. The speedometer shows how steep the line is right now: steep means fast, flat means stopped, and going downhill means reversing.',
+ read:k=>`Position now: <b>${fmt(k.ft,4)} m</b> · Speed now (the steepness): <b>${fmt(k.st,3)} m/s</b>`,
+ ch:[['Make the car pause at t = 30 s (the speedometer reads 0 there), then move again later.',k=>Math.abs(k.slope(30))<0.3&&k.slope(50)>1],['Reach 700 m without the speedometer ever passing 15 m/s.',k=>k.f(60)>=700&&k.smax<=15],['Make the car reverse for a while (the speedometer goes below zero).',k=>k.smin<-1]]}];
+function sbS(){const c=SB[sbCur];return SBST[c.id]||(SBST[c.id]={pts:c.init.slice(),done:new Set(),tc:1,flight:c.scene==='cat'?1:0,sel:0});}
+function sbCalc(){const c=SB[sbCur],s=sbS(),ys=s.pts,n=ys.length,[x0,x1]=c.xr,h=(x1-x0)/(n-1),d=[];
+  for(let i=0;i<n-1;i++)d.push((ys[i+1]-ys[i])/h);
+  const mk=new Array(n);mk[0]=d[0];mk[n-1]=d[n-2];for(let i=1;i<n-1;i++)mk[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){mk[i]=0;mk[i+1]=0;continue;}const a=mk[i]/d[i],b=mk[i+1]/d[i],q=a*a+b*b;if(q>9){const tau=3/Math.sqrt(q);mk[i]=tau*a*d[i];mk[i+1]=tau*b*d[i];}}
+  const seg=x=>{const i=clamp(Math.floor((x-x0)/h),0,n-2);return [i,(x-(x0+i*h))/h];};
+  const f=x=>{const [i,t]=seg(x),t2=t*t,t3=t2*t;return (2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*h*mk[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*h*mk[i+1];};
+  const slope=x=>{const [i,t]=seg(x),t2=t*t;return ((6*t2-6*t)*ys[i]+(-6*t2+6*t)*ys[i+1])/h+(3*t2-4*t+1)*mk[i]+(3*t2-2*t)*mk[i+1];};
+  const G=600,Fc=[0];let mx=-Infinity,mn=Infinity,smx=-Infinity,smn=Infinity,prev=f(x0);
+  for(let k=1;k<=G;k++){const x=x0+(x1-x0)*k/G,y=f(x);Fc.push(Fc[k-1]+(prev+y)/2*(x1-x0)/G);prev=y;}
+  for(let k=0;k<=G;k++){const x=x0+(x1-x0)*k/G,y=f(x),sl=slope(x);mx=Math.max(mx,y);mn=Math.min(mn,y);smx=Math.max(smx,sl);smn=Math.min(smn,sl);}
+  const F=x=>{const u=clamp((x-x0)/(x1-x0),0,1)*G,k=Math.floor(u);return k>=G?Fc[G]:Fc[k]+(Fc[k+1]-Fc[k])*(u-k);};
+  const start=c.start||0;let peak=-Infinity,minV=Infinity;Fc.forEach(v=>{peak=Math.max(peak,start+v);minV=Math.min(minV,start+v);});
+  const tx=x0+(x1-x0)*s.tc;
+  return {c,s,f,slope,F,Fend:Fc[G],endV:start+Fc[G],peakV:peak,minV,max:mx,min:mn,smax:smx,smin:smn,tx,Ft:F(tx),ft:f(tx),st:slope(tx),Vt:start+F(tx),x0,x1,h,n};}
+function sbDrawGraph(k){const cv=$('#sb-graph'),{g,W,H}=prep(cv),cc=colors(),c=k.c,s=k.s,L=58,R=18,T=30,B=36,[y0,y1]=c.yr;
+  const X=x=>L+(x-k.x0)/(k.x1-k.x0)*(W-L-R),Y=y=>T+(y1-y)/(y1-y0)*(H-T-B);sbMap={L,R,T,B,W,H,X,Y};
+  for(const v of niceTicks(k.x0,k.x1,6)){line(g,X(v),T,X(v),H-B,cc.grid,1);txt(g,fmt(v,3),X(v),H-B+13,cc.ink3,'center',11);}
+  for(const v of niceTicks(y0,y1,5)){line(g,L,Y(v),W-R,Y(v),cc.grid,1);txt(g,fmt(v,3),L-6,Y(v),cc.ink3,'right',11);}
+  line(g,L,Y(0),W-R,Y(0),cc.ink3,1.2);
+  if(c.kind==='int'){const N=240,xe=k.tx;for(let i=0;i<N;i++){const xa=k.x0+(xe-k.x0)*i/N,xb=k.x0+(xe-k.x0)*(i+1)/N,ya=k.f(xa),yb=k.f(xb);
+      g.fillStyle=(ya+yb)/2>=0?cc.acc:cc.bad;g.globalAlpha=0.24;g.beginPath();g.moveTo(X(xa),Y(0));g.lineTo(X(xa),Y(ya));g.lineTo(X(xb),Y(yb));g.lineTo(X(xb),Y(0));g.closePath();g.fill();}g.globalAlpha=1;}
+  g.strokeStyle=cc.acc;g.lineWidth=2.6;g.beginPath();for(let i=0;i<=300;i++){const x=k.x0+(k.x1-k.x0)*i/300;i?g.lineTo(X(x),Y(k.f(x))):g.moveTo(X(x),Y(k.f(x)));}g.stroke();
+  line(g,X(k.tx),T,X(k.tx),H-B,cc.ink2,1,[4,4]);
+  if(c.kind==='der'){const m=k.slope(k.tx),sp=(k.x1-k.x0)*0.12;line(g,X(k.tx-sp),Y(k.ft-m*sp),X(k.tx+sp),Y(k.ft+m*sp),cc.ref,2.4);g.fillStyle=cc.ref;g.beginPath();g.arc(X(k.tx),Y(k.ft),4.5,0,7);g.fill();}
+  s.pts.forEach((p,i)=>{const x=X(k.x0+k.h*i),y=Y(p);g.fillStyle=i===s.sel?cc.acc:cc.panel;g.strokeStyle=cc.acc;g.lineWidth=2.5;g.beginPath();g.arc(x,y,8,0,7);g.fill();g.stroke();});
+  txt(g,fitT(g,'↑ '+c.yl,W-16),8,13,cc.ink,'left',12);txt(g,fitT(g,c.xl+' →',W-L-R),W-R,H-8,cc.ink,'right',12);}
+const SBS={
+car(g,W,H,k,c){const yr=H*0.64,x0=24,x1=W-70,maxD=Math.max(950,k.Fend*1.05),sc=(x1-x0)/maxD;
+  g.fillStyle=c.metal;g.globalAlpha=0.32;g.fillRect(0,yr,W,28);g.globalAlpha=1;for(let x=0;x<W;x+=34)line(g,x,yr+14,x+16,yr+14,c.panel,2);
+  for(const v of niceTicks(0,maxD,4)){line(g,x0+v*sc,yr+30,x0+v*sc,yr+38,c.ink3,1);txt(g,fmt(v,3)+' m',x0+v*sc,yr+50,c.ink3,'center',11);}
+  [600,900].forEach(d=>{const fx=x0+d*sc;line(g,fx,yr,fx,yr-54,c.ink2,1.5);g.fillStyle=c.ref;g.beginPath();g.moveTo(fx,yr-54);g.lineTo(fx+16,yr-47);g.lineTo(fx,yr-40);g.closePath();g.fill();txt(g,d+' m',fx+4,yr-62,c.ref,'left',11);});
+  iconCar(g,x0+k.Ft*sc-28,yr,c);
+  g.fillStyle=c.paper;g.fillRect(12,12,160,48);g.strokeStyle=c.rule;g.lineWidth=1;g.strokeRect(12,12,160,48);txt(g,'Odometer',22,26,c.ink3,'left',11);txt(g,`${fmt(k.Ft,4)} m`,22,45,c.ink,'left',17);
+  txt(g,`speed ${fmt(k.ft,3)} m/s`,W-14,26,c.ink2,'right',12);},
+tank(g,W,H,k,c){const cp=k.c.cap,V=k.Vt,tw=Math.min(170,W*0.4),yb=H-28,th=H-84,tx=W*0.5-tw/2,yt=yb-th,lv=clamp(V,0,cp);
+  g.fillStyle=c.water;g.globalAlpha=0.65;g.fillRect(tx,yb-lv/cp*th,tw,lv/cp*th);g.globalAlpha=1;
+  g.strokeStyle=c.ink2;g.lineWidth=2.5;g.beginPath();g.moveTo(tx,yt);g.lineTo(tx,yb);g.lineTo(tx+tw,yb);g.lineTo(tx+tw,yt);g.stroke();
+  for(let v=0;v<=cp;v+=20){const y=yb-v/cp*th;line(g,tx-8,y,tx,y,c.ink3,1);txt(g,v+' L',tx-12,y,c.ink3,'right',11);}
+  line(g,8,yt-26,tx+26,yt-26,c.metal,5);if(k.ft>0.02){g.fillStyle=c.water;g.fillRect(tx+22,yt-24,2+10*k.ft/3,yb-lv/cp*th-(yt-24));txt(g,'filling',tx+30+10*k.ft/3,yt-10,c.acc,'left',11);}
+  line(g,tx+tw,yb-6,tx+tw+40,yb-6,c.metal,5);if(k.ft<-0.02){arrow(g,tx+tw+44,yb-6,tx+tw+44+28*(-k.ft)/3+10,yb-6,c.bad,2+6*(-k.ft)/3,8);txt(g,'draining',tx+tw+44,yb-24,c.bad,'left',11);}
+  txt(g,`${fmt(V,3)} L`,tx+tw/2,yt-46,c.ink,'center',17);
+  if(V>cp)txt(g,'Overflowing!',tx+tw/2,yt-10,c.bad,'center',13);if(V<=0)txt(g,'Empty!',tx+tw/2,yb-16,c.bad,'center',13);},
+cat(g,W,H,k,c){const s=k.s,hFull=k.Fend/(2*g0),yb=H-22,railPx=56,topM=60,hs=(yb-railPx-26)/topM,railTop=yb-railPx,cx=W*0.42,rx=W-44;
+  line(g,rx,yb,rx,yb-topM*hs-railPx,c.ink3,1);for(let v=0;v<=topM;v+=10){const y=railTop-v*hs;line(g,rx,y,rx+7,y,c.ink3,1);txt(g,v+' m',rx+10,y,c.ink3,'left',11);}
+  g.fillStyle=c.olive;g.fillRect(cx-22,yb-6,44,8);line(g,cx,yb,cx,railTop,c.metal,6);txt(g,'2 m rail',cx-14,yb-railPx/2,c.ink3,'right',11);
+  const ay=Math.max(14,railTop-hFull*hs);line(g,cx-60,ay,rx-4,ay,c.ref,1.5,[5,4]);txt(g,hFull>topM?`it will reach ${fmt(hFull,3)} m (above the top)`:`it will reach ${fmt(hFull,3)} m`,cx-60,ay-10,c.ref,'left',12);
+  let y;if(s.flight>0){const f=s.flight;y=railTop-hFull*hs*(1-(1-f)*(1-f));}else y=yb-railPx*s.tc;
+  rock(g,cx,Math.max(10,y-10),10,c);
+  if(s.flight===0&&s.tc>0&&s.tc<1)arrow(g,cx,y+26+30*k.ft/600,cx,y+4,c.acc,2.5);},
+carder(g,W,H,k,c){const yr=H*0.78,x0=24,x1=W-30,sc=(x1-x0-56)/800;
+  g.fillStyle=c.metal;g.globalAlpha=0.32;g.fillRect(0,yr,W,22);g.globalAlpha=1;
+  for(const v of [0,200,400,600,800]){line(g,x0+v*sc,yr+22,x0+v*sc,yr+28,c.ink3,1);txt(g,v+' m',x0+v*sc,yr+38,c.ink3,'center',11);}
+  iconCar(g,x0+k.ft*sc,yr,c);
+  const R=Math.min(W*0.28,H*0.32),cx=W/2,cy=H*0.5;dial(g,cx,cy,R,30,k.st,c,null);
+  txt(g,`${fmt(k.st,3)} m/s`,cx,cy+24,c.acc,'center',16);txt(g,'Speedometer (the steepness of your line)',cx,14,c.ink2,'center',12);
+  if(k.st<-0.2)txt(g,'reversing',cx,cy+44,c.bad,'center',12);else if(Math.abs(k.st)<=0.2)txt(g,'stopped',cx,cy+44,c.ink2,'center',12);}};
+function sbDraw(){if(mode!=='sb')return;const k=sbCalc(),c=k.c,s=k.s;sbDrawGraph(k);const {g,W,H}=prep($('#sb-scene'));SBS[c.scene](g,W,H,k,colors());
+  $('#sb-read').innerHTML=c.read(k);
+  $('#sb-ch').innerHTML=c.ch.map(([txtc,test],i)=>{const now=!!test(k);if(now)s.done.add(i);return `<li class="${now?'now':''}"><span class="mk" aria-hidden="true">${now?'✓':''}</span><span>${txtc}</span>${!now&&s.done.has(i)?'<span class="was">done before</span>':''}</li>`;}).join('');}
+function sbSetPt(i,py){const c=SB[sbCur],s=sbS(),[y0,y1]=c.yr,{T,B,H}=sbMap;let v=y1-(py-T)/(H-T-B)*(y1-y0);v=Math.round(v/c.step)*c.step;v=clamp(v,y0,y1);s.pts[i]=+v.toFixed(4);s.sel=i;schedule();}
+function sbStart(){if(sbPlay){sbStop();return;}const c=SB[sbCur],s=sbS();
+  if(reduceMotion()){s.tc=1;s.flight=c.scene==='cat'?1:0;$('#sb-t').value=1000;sbDraw();return;}
+  sbPlay={t0:performance.now(),dur:c.scene==='cat'?4200:4500};$('#sb-play').textContent='Pause';
+  const tick=now=>{if(!sbPlay)return;const p=Math.min(1,(now-sbPlay.t0)/sbPlay.dur),s=sbS();
+    if(c.scene==='cat'){if(p<0.45){s.tc=p/0.45;s.flight=0;}else{s.tc=1;s.flight=(p-0.45)/0.55;}}else s.tc=p;
+    $('#sb-t').value=Math.round(s.tc*1000);sbDraw();if(p<1)sbPlay.raf=requestAnimationFrame(tick);else sbStop();};
+  sbPlay.raf=requestAnimationFrame(tick);}
+function sbStop(){if(sbPlay&&sbPlay.raf)cancelAnimationFrame(sbPlay.raf);sbPlay=null;$('#sb-play').textContent='Play';}
+function loadSandbox(i){stopPlay();sbStop();mode='sb';sbCur=i;const c=SB[i],s=sbS();
+  $('#prob-ui').hidden=true;$('#sandbox').hidden=false;$('#tools').hidden=true;
+  $('#h-tier').textContent='Sandbox';$('#h-kind').hidden=true;$('#h-title').textContent=c.title;
+  $('#sb-intro').textContent=c.intro;$('#sb-t-l').textContent=c.tl;$('#sb-t').value=Math.round(s.tc*1000);
+  renderLevels();sbDraw();window.scrollTo(0,0);}
 
 /* ---------- wiring ---------- */
+$('#b-levels').onclick=e=>openDrawer('d-levels',e.currentTarget);
+$('#b-given').onclick=e=>openDrawer('d-given',e.currentTarget);
+$('#b-hints').onclick=e=>openDrawer('d-hints',e.currentTarget);
+$('#b-hint-c').onclick=e=>openDrawer('d-hints',e.currentTarget);
+$('#scrim').onclick=()=>closeDrawers();
+$$('[data-close]').forEach(b=>b.onclick=()=>closeDrawers());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#scrim').hidden)closeDrawers();});
+$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 $('#b-check').onclick=check;
-$('#b-hint').onclick=()=>{const st=state();if(st.hint<3)st.hint++;renderHints();update();};
-$('#b-sol').onclick=()=>{state().showSol=true;renderHints();};
-$('#b-new').onclick=newNumbers;
-$('#b-pre').onclick=()=>{const st=state();st.showPre=!st.showPre;if(!st.showPre)st.pre='';renderProblem();update();};
-$('#sl-p').addEventListener('input',e=>{probe=e.target.value/1000;schedule();});
-$('#sl-n').addEventListener('input',e=>{nStrips=+e.target.value;$('#sl-n-o').textContent=nStrips;schedule();});
-new ResizeObserver(()=>schedule()).observe($('#viz'));
+$('#b-play').onclick=startPlay;$('#b-play3').onclick=startPlay;
+$('#b-math').onclick=()=>{setMath(!showMath);drawAll();};
+$('#b-pre').onclick=()=>{const st=state();st.showPre=!st.showPre;if(!st.showPre)st.pre='';renderProblem();};
+['#sl-probe','#sl-probe2'].forEach(s=>$(s).addEventListener('input',e=>{probe=e.target.value/1000;stopPlay();syncSliders();schedule();}));
+['#sl-n1','#sl-n2'].forEach(s=>$(s).addEventListener('input',e=>{nPieces=+e.target.value;stopPlay();syncSliders();schedule();}));
+$('#sb-play').onclick=sbStart;
+$('#sb-t').addEventListener('input',e=>{sbStop();const s=sbS();s.tc=e.target.value/1000;s.flight=0;schedule();});
+$('#sb-reset').onclick=()=>{const s=sbS();s.pts=SB[sbCur].init.slice();schedule();};
+{const sg=$('#sb-graph');let drag=null;
+  sg.addEventListener('pointerdown',e=>{if(!sbMap)return;const r=sg.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,c=SB[sbCur],s=sbS();let best=-1,bd=1e9;
+    s.pts.forEach((_,i)=>{const d=Math.abs(sbMap.X(c.xr[0]+(c.xr[1]-c.xr[0])*i/(s.pts.length-1))-px);if(d<bd){bd=d;best=i;}});
+    if(best<0||bd>60)return;sbStop();drag={i:best};try{sg.setPointerCapture(e.pointerId);}catch(_){}sbSetPt(best,py);e.preventDefault();});
+  sg.addEventListener('pointermove',e=>{if(!drag)return;const r=sg.getBoundingClientRect();sbSetPt(drag.i,e.clientY-r.top);});
+  ['pointerup','pointercancel'].forEach(ev=>sg.addEventListener(ev,()=>{drag=null;}));
+  sg.addEventListener('keydown',e=>{const s=sbS(),c=SB[sbCur];if(e.key==='ArrowLeft'||e.key==='ArrowRight'){s.sel=clamp(s.sel+(e.key==='ArrowRight'?1:-1),0,s.pts.length-1);schedule();e.preventDefault();}
+    else if(e.key==='ArrowUp'||e.key==='ArrowDown'){const d=(e.key==='ArrowUp'?1:-1)*c.step*(e.shiftKey?10:1);s.pts[s.sel]=+clamp(s.pts[s.sel]+d,c.yr[0],c.yr[1]).toFixed(4);schedule();e.preventDefault();}});}
+new ResizeObserver(()=>schedule()).observe($('.app'));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>schedule());
 new MutationObserver(()=>schedule()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>schedule());
 
-/* opens on the tank problem with an example attempt, so the bench shows what it does */
-cur=TPL.findIndex(t=>t.id==='pump');
-Object.assign(state(),{f:'ρ g π R^2 y',v:'y',lo:'0',hi:'H'});
-P=mkParams(TPL[cur],state().seed);renderProblem();update();
-$('#fb').innerHTML='<div class="fb info" role="status"><p>This is an example attempt, and it has a mistake. Edit it, or press Check to see how far off it is.</p></div>';
+/* opens on the first sandbox: the quickest way to get a feel for what an integral does */
+loadSandbox(0);
 </script>
 </body>
 </html>
